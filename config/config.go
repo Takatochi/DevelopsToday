@@ -12,7 +12,6 @@ type (
 		HTTP    HTTP
 		Log     Log
 		PG      PG
-		Metrics Metrics
 		Swagger Swagger
 		JWT     JWT
 	}
@@ -34,10 +33,6 @@ type (
 	PG struct {
 		PoolMax int    `env:"PG_POOL_MAX,required"`
 		URL     string `env:"PG_URL,required"`
-	}
-
-	Metrics struct {
-		Enabled bool `env:"METRICS_ENABLED" envDefault:"true"`
 	}
 
 	Swagger struct {
