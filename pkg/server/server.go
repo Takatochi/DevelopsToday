@@ -35,7 +35,6 @@ func New(opts ...Option) *Server {
 		shutdownTimeout: _defaultShutdownTimeout,
 	}
 
-	// Apply options
 	for _, opt := range opts {
 		opt(s)
 	}
