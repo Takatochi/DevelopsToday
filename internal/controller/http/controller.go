@@ -3,6 +3,7 @@ package http
 import (
 	"DevelopsToday/config"
 	v1 "DevelopsToday/internal/controller/http/v1"
+	"DevelopsToday/internal/services"
 
 	// Swagger documentation
 	_ "DevelopsToday/docs"
@@ -14,11 +15,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-//	@title			Spy Cat Agency API
-//	@version		1.0
-//	@description	API for managing spy cats, missions, and targets
-//	@host			localhost:8080
-//	@BasePath		/v1
+// @title			Spy Cat Agency API
+// @version		1.0
+// @description	API for managing spy cats, missions, and targets
+// @host			localhost:8080
+// @BasePath		/v1
 func NewV1Controller(engine *gin.Engine, cfg *config.Config, l logger.Interface) {
 	// Middleware
 	engine.Use(middleware.LoggerMiddleware(l))
@@ -29,10 +30,13 @@ func NewV1Controller(engine *gin.Engine, cfg *config.Config, l logger.Interface)
 		engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
+	//Services
+	breedService := services.NewBreed()
+
 	// API v1 group
 	v1Group := engine.Group("/v1")
 	{
-		v1.NewSpyCatsRoutes(v1Group, l)
+		v1.NewSpyCatsRoutes(v1Group, breedService, l)
 		v1.NewMissionsRoutes(v1Group, l)
 		v1.NewTargetsRoutes(v1Group, l)
 	}

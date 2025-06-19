@@ -2,7 +2,6 @@
 .vscode
 tmp/
 test/
-docs/
 examples/
 deployments/
 start.bat

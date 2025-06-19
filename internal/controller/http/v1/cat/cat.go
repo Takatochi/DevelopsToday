@@ -2,14 +2,19 @@ package cat
 
 import (
 	"DevelopsToday/internal/models"
+	"DevelopsToday/internal/services"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+type Service interface {
+	services.Validator
+}
 type Handler struct {
-	cats []models.Cat
+	cats    []models.Cat
+	Service Service
 }
 
 var idCounter uint = 1
@@ -33,6 +38,11 @@ func (h *Handler) Create(ctx *gin.Context) {
 		return
 	}
 
+	if !h.Service.IsValid(newCat.Breed) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid breed"})
+		return
+	}
+
 	newCat.ID = idCounter
 	idCounter++
 	h.cats = append(h.cats, newCat)
@@ -40,8 +50,8 @@ func (h *Handler) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, newCat)
 }
 
-y		List all c
 // List godoc
+//
 //	@Summary		List all cats
 //	@Description	Get list of all cats
 //	@Tags			cats
@@ -52,9 +62,10 @@ func (h *Handler) List(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, h.cats)
 }
 
-at by ID
 //	@Des
+//
 // GetByID godoc
+//
 //	@Summary		Get cat by ID
 //	@Description	Get cat details by ID
 //	@Tags			cats
@@ -74,8 +85,8 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
 }
 
-
 // UpdateSalary godoc
+//
 //	@Summary		Update cat salary
 //	@Description	Update salary for a specific cat
 //	@Tags			cats
@@ -107,8 +118,8 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 	ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
 }
 
-
 // Delete godoc
+//
 //	@Summary		Delete cat
 //	@Description	Delete cat by ID
 //	@Tags			cats

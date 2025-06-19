@@ -9,11 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
-	handler := &V1{l: l, cat: &cat.Handler{}}
+func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service cat.Service, l logger.Interface) {
+	handler := &V1{l: l, cat: &cat.Handler{
+		Service: service,
+	}}
+
 	cats := apiV1Group.Group("/cats")
 	{
-		cats.POST("")
+		cats.POST("", handler.cat.Create)
 		cats.GET("", handler.cat.List)
 		cats.GET("/:id", handler.cat.GetByID)
 		cats.PUT("/:id/salary", handler.cat.UpdateSalary)
