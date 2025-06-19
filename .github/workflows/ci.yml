@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
 
 env:
   GO_VERSION: '1.23'
@@ -37,6 +37,12 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
+    - name: Install swag for Swagger generation
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate Swagger docs
+      run: swag init -g internal/controller/http/controller.go -o docs
+
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v3
       with:
@@ -48,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15-alpine
         env:
           POSTGRES_PASSWORD: secret_password
           POSTGRES_USER: spy_cats
@@ -60,6 +66,16 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
     - name: Checkout code
@@ -83,7 +99,13 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run tests
+    - name: Install swag for Swagger generation
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate Swagger docs
+      run: swag init -g internal/controller/http/controller.go -o docs
+
+    - name: Run unit tests
       env:
         PG_URL: postgres://spy_cats:secret_password@localhost:5432/spy_cats?sslmode=disable
         APP_NAME: spy-cats-api
@@ -91,13 +113,36 @@ jobs:
         HTTP_PORT: 8080
         LOG_LEVEL: info
         SWAGGER_ENABLED: true
-        JWT_SECRET: test-secret
+        JWT_SECRET: test-secret-key-for-ci-tests-at-least-32-characters
         JWT_ACCESS_TOKEN_TTL: 900
         JWT_REFRESH_TOKEN_TTL: 604800
         JWT_SIGNING_ALGORITHM: HS256
+        CACHE_TYPE: memory
+        REDIS_URL: redis://localhost:6379
+        REDIS_PASSWORD: ""
+        REDIS_DB: 0
       run: |
         go test -v -race -coverprofile=coverage.out ./...
         go tool cover -html=coverage.out -o coverage.html
+
+    - name: Run integration tests
+      env:
+        PG_URL: postgres://spy_cats:secret_password@localhost:5432/spy_cats?sslmode=disable
+        APP_NAME: spy-cats-api
+        APP_VERSION: test
+        HTTP_PORT: 8080
+        LOG_LEVEL: info
+        SWAGGER_ENABLED: true
+        JWT_SECRET: test-secret-key-for-ci-tests-at-least-32-characters
+        JWT_ACCESS_TOKEN_TTL: 900
+        JWT_REFRESH_TOKEN_TTL: 604800
+        JWT_SIGNING_ALGORITHM: HS256
+        CACHE_TYPE: memory
+        REDIS_URL: redis://localhost:6379
+        REDIS_PASSWORD: ""
+        REDIS_DB: 0
+      run: |
+        go test -v -tags=integration ./tests/integration/
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -138,8 +183,15 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
+    - name: Install swag for Swagger generation
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate Swagger docs
+      run: swag init -g internal/controller/http/controller.go -o docs
+
     - name: Build application
       run: |
+        mkdir -p bin
         CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/app cmd/main.go
 
     - name: Upload build artifact
@@ -147,6 +199,42 @@ jobs:
       with:
         name: spy-cats-binary
         path: bin/app
+
+  docker-test:
+    name: Docker Compose Test
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install swag for Swagger generation
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        swag init -g internal/controller/http/controller.go -o docs
+
+    - name: Create SSL certificates
+      run: |
+        mkdir -p ssl
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout ssl/nginx.key -out ssl/nginx.crt \
+          -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+
+    - name: Test Docker Compose (Lite)
+      run: |
+        docker-compose -f docker-compose.lite.yml up -d --build
+        sleep 30
+        curl -f http://localhost:8080/health || exit 1
+        docker-compose -f docker-compose.lite.yml down
+
+    - name: Test Docker Compose (Full Stack)
+      run: |
+        docker-compose up -d --build
+        sleep 30
+        curl -k -f https://localhost/health || exit 1
+        curl -k -f https://localhost/swagger/index.html || exit 1
+        docker-compose down
 
   security:
     name: Security Scan
@@ -173,11 +261,17 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, docker-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install swag for Swagger generation
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        swag init -g internal/controller/http/controller.go -o docs
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3

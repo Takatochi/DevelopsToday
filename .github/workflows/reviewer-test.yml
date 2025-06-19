@@ -1,0 +1,182 @@
+name: Reviewer Test Suite
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  reviewer-setup-test:
+    name: Test Reviewer Setup Commands
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install Make
+      run: sudo apt-get update && sudo apt-get install -y make
+
+    - name: Test make quick-lite
+      run: |
+        # Install swag
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        
+        # Generate Swagger docs
+        swag init -g internal/controller/http/controller.go -o docs
+        
+        # Test lite setup
+        make quick-lite &
+        LITE_PID=$!
+        
+        # Wait for services to start
+        sleep 45
+        
+        # Test health endpoint
+        curl -f http://localhost:8080/health || exit 1
+        
+        # Test Swagger endpoint
+        curl -f http://localhost:8080/swagger/index.html || exit 1
+        
+        # Stop services
+        make lite-down || docker-compose -f docker-compose.lite.yml down
+        wait $LITE_PID || true
+
+    - name: Test make reviewer-setup
+      run: |
+        # Install swag
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        
+        # Test full reviewer setup
+        make reviewer-setup &
+        SETUP_PID=$!
+        
+        # Wait for services to start
+        sleep 60
+        
+        # Test HTTPS health endpoint
+        curl -k -f https://localhost/health || exit 1
+        
+        # Test HTTPS Swagger endpoint
+        curl -k -f https://localhost/swagger/index.html || exit 1
+        
+        # Stop services
+        make docker-compose-down || docker-compose down
+        wait $SETUP_PID || true
+
+    - name: Test make reviewer-test
+      run: |
+        # Install swag
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        
+        # Generate docs
+        swag init -g internal/controller/http/controller.go -o docs
+        
+        # Test reviewer test suite
+        make reviewer-test
+
+    - name: Test make status and health-check
+      run: |
+        # Start lite services for testing
+        make quick-lite &
+        sleep 30
+        
+        # Test status command
+        make status
+        
+        # Test health check
+        make health-check
+        
+        # Clean up
+        make lite-down
+
+  makefile-commands-test:
+    name: Test All Makefile Commands
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y make openssl
+        go install github.com/swaggo/swag/cmd/swag@latest
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+    - name: Test build commands
+      run: |
+        make deps
+        make swagger
+        make build
+
+    - name: Test SSL generation
+      run: |
+        make ssl-generate
+        ls -la ssl/
+
+    - name: Test linting and formatting
+      run: |
+        make lint
+        make fmt
+
+    - name: Test help command
+      run: make help
+
+    - name: Test troubleshoot command
+      run: make troubleshoot
+
+  documentation-test:
+    name: Test Documentation and Examples
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Test README examples (without Make)
+      run: |
+        # Install swag
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        
+        # Test pure Docker commands from README
+        swag init -g internal/controller/http/controller.go -o docs
+        docker-compose -f docker-compose.lite.yml up -d --build
+        
+        # Wait and test
+        sleep 30
+        curl -f http://localhost:8080/health || exit 1
+        
+        # Clean up
+        docker-compose -f docker-compose.lite.yml down
+
+    - name: Validate Docker Compose files
+      run: |
+        docker-compose -f docker-compose.yml config
+        docker-compose -f docker-compose.lite.yml config
+        docker-compose -f docker-compose.prod.yml config
+
+    - name: Test SSL setup (manual)
+      run: |
+        mkdir -p ssl
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout ssl/nginx.key -out ssl/nginx.crt \
+          -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+        ls -la ssl/

@@ -36,21 +36,48 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
+    - name: Install swag for Swagger generation
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate Swagger docs
+      run: swag init -g internal/controller/http/controller.go -o docs
+
     - name: Run tests
+      env:
+        PG_URL: postgres://spy_cats:secret_password@localhost:5432/spy_cats?sslmode=disable
+        APP_NAME: spy-cats-api
+        APP_VERSION: release
+        HTTP_PORT: 8080
+        LOG_LEVEL: info
+        SWAGGER_ENABLED: true
+        JWT_SECRET: release-secret-key-for-tests-at-least-32-characters
+        JWT_ACCESS_TOKEN_TTL: 900
+        JWT_REFRESH_TOKEN_TTL: 604800
+        JWT_SIGNING_ALGORITHM: HS256
+        CACHE_TYPE: memory
       run: go test -v ./...
 
     - name: Build binaries
       run: |
+        mkdir -p bin
+
+        # Get version from tag
+        VERSION=${GITHUB_REF#refs/tags/}
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        COMMIT_SHA=${GITHUB_SHA::8}
+
+        LDFLAGS="-s -w -X main.Version=$VERSION -X main.BuildTime=$BUILD_TIME -X main.CommitSHA=$COMMIT_SHA"
+
         # Linux
-        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/spy-cats-api-linux-amd64 cmd/main.go
-        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o bin/spy-cats-api-linux-arm64 cmd/main.go
-        
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$LDFLAGS" -o bin/spy-cats-api-linux-amd64 cmd/main.go
+        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="$LDFLAGS" -o bin/spy-cats-api-linux-arm64 cmd/main.go
+
         # Windows
-        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o bin/spy-cats-api-windows-amd64.exe cmd/main.go
-        
+        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="$LDFLAGS" -o bin/spy-cats-api-windows-amd64.exe cmd/main.go
+
         # macOS
-        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o bin/spy-cats-api-darwin-amd64 cmd/main.go
-        CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o bin/spy-cats-api-darwin-arm64 cmd/main.go
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="$LDFLAGS" -o bin/spy-cats-api-darwin-amd64 cmd/main.go
+        CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="$LDFLAGS" -o bin/spy-cats-api-darwin-arm64 cmd/main.go
 
     - name: Create checksums
       run: |
@@ -79,15 +106,23 @@ jobs:
         $CHANGELOG
         
         ## Installation
-        
+
         ### Download Binary
         Download the appropriate binary for your platform from the assets below.
-        
+
         ### Docker
         \`\`\`bash
         docker pull ghcr.io/${{ github.repository }}:$TAG_NAME
         \`\`\`
-        
+
+        ### Docker Compose (Quick Start)
+        \`\`\`bash
+        git clone https://github.com/${{ github.repository }}.git
+        cd DevelopsToday
+        git checkout $TAG_NAME
+        make quick-lite  # Start API + DB + Redis
+        \`\`\`
+
         ### Go Install
         \`\`\`bash
         go install github.com/${{ github.repository }}/cmd@$TAG_NAME
@@ -117,6 +152,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install swag for Swagger generation
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        swag init -g internal/controller/http/controller.go -o docs
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3

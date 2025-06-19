@@ -372,7 +372,7 @@ setup: ## Complete project setup (dependencies, tools, certificates, swagger)
 	$(MAKE) swagger
 	@echo "$(YELLOW)Step 5: Building application...$(NC)"
 	$(MAKE) build
-	@echo "$(GREEN)✅ Project setup completed successfully!$(NC)"
+	@echo "$(GREEN)Project setup completed successfully!$(NC)"
 	@echo "$(BLUE)Next steps:$(NC)"
 	@echo "  1. Copy .env.example to .env and configure your settings"
 	@echo "  2. Run 'make deploy' to start all services"
@@ -389,7 +389,7 @@ test-all: ## Run all types of tests (unit, integration, coverage)
 	$(MAKE) lint
 	@echo "$(YELLOW)Step 4: Running security scan...$(NC)"
 	$(MAKE) security || echo "$(YELLOW)Security scan failed or gosec not installed$(NC)"
-	@echo "$(GREEN)✅ All tests completed!$(NC)"
+	@echo "$(GREEN) All tests completed!$(NC)"
 	@echo "$(BLUE)Test results:$(NC)"
 	@echo "  - Coverage report: coverage.html"
 	@echo "  - Unit tests: PASSED"
@@ -408,7 +408,7 @@ deploy: ## Deploy the complete application stack
 	@sleep 10
 	@echo "$(YELLOW)Step 5: Running health check...$(NC)"
 	$(MAKE) health-check || echo "$(YELLOW)Health check failed - services may still be starting$(NC)"
-	@echo "$(GREEN)✅ Deployment completed!$(NC)"
+	@echo "$(GREEN) Deployment completed!$(NC)"
 	@echo "$(BLUE)Services available at:$(NC)"
 	@echo "  - API (HTTP):  http://localhost:8080"
 	@echo "  - API (HTTPS): https://localhost"
@@ -429,23 +429,23 @@ ssl-fix: ## Fix SSL certificate issues and restart services
 	@echo "$(YELLOW)Step 5: Testing HTTPS connection...$(NC)"
 	@sleep 10
 	curl -k -f https://localhost/health || echo "$(RED)HTTPS still not working$(NC)"
-	@echo "$(GREEN)✅ SSL certificates fixed!$(NC)"
+	@echo "$(GREEN) SSL certificates fixed!$(NC)"
 	@echo "$(BLUE)Test HTTPS access:$(NC)"
-	@echo "  curl -k https://localhost/health"
-	@echo "  curl -k https://localhost/swagger/index.html"
+	@echo "curl -k https://localhost/health"
+	@echo "curl -k https://localhost/swagger/index.html"
 
 .PHONY: quick-start
 quick-start: ## Quick start for new developers (setup + deploy)
-	@echo "$(BLUE)🚀 Quick start for Spy Cats API...$(NC)"
+	@echo "$(BLUE) Quick start for Spy Cats API...$(NC)"
 	$(MAKE) setup
 	@echo "$(YELLOW)Copying environment file...$(NC)"
 	@if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || echo "$(YELLOW)No .env.example found$(NC)"; fi
 	$(MAKE) deploy
-	@echo "$(GREEN)🎉 Quick start completed!$(NC)"
+	@echo "$(GREEN) Quick start completed!$(NC)"
 	@echo "$(BLUE)Your Spy Cats API is ready at:$(NC)"
-	@echo "  📖 Documentation: https://localhost/swagger/index.html"
-	@echo "  🔍 Health Check:  https://localhost/health"
-	@echo "  🐱 API Endpoint:  https://localhost/v1/cats"
+	@echo "Documentation: https://localhost/swagger/index.html"
+	@echo "Health Check:  https://localhost/health"
+	@echo "API Endpoint:  https://localhost/v1/cats"
 
 .PHONY: quick-lite
 quick-lite: ## Ultra-fast start (lite version - no SSL, no Nginx)
@@ -459,26 +459,26 @@ quick-lite: ## Ultra-fast start (lite version - no SSL, no Nginx)
 	@echo "$(YELLOW)Step 4: Health check...$(NC)"
 	$(MAKE) lite-status
 	@echo ""
-	@echo "$(GREEN)⚡ Ultra-fast start completed!$(NC)"
+	@echo "$(GREEN) Ultra-fast start completed!$(NC)"
 	@echo "$(BLUE)================================================$(NC)"
-	@echo "$(GREEN)✅ Spy Cats API Lite is ready!$(NC)"
+	@echo "$(GREEN) Spy Cats API Lite is ready!$(NC)"
 	@echo ""
-	@echo "$(BLUE)🌐 Available endpoints:$(NC)"
-	@echo "  📖 Swagger Documentation: $(YELLOW)http://localhost:8080/swagger/index.html$(NC)"
-	@echo "  🔍 Health Check:          $(YELLOW)http://localhost:8080/health$(NC)"
-	@echo "  🐱 API Base URL:          $(YELLOW)http://localhost:8080/v1$(NC)"
-	@echo "  🔐 Login Endpoint:        $(YELLOW)http://localhost:8080/v1/auth/login$(NC)"
+	@echo "$(BLUE) Available endpoints:$(NC)"
+	@echo "  Swagger Documentation: $(YELLOW)http://localhost:8080/swagger/index.html$(NC)"
+	@echo "  Health Check:          $(YELLOW)http://localhost:8080/health$(NC)"
+	@echo "  API Base URL:          $(YELLOW)http://localhost:8080/v1$(NC)"
+	@echo "  Login Endpoint:        $(YELLOW)http://localhost:8080/v1/auth/login$(NC)"
 	@echo ""
-	@echo "$(BLUE)🔑 Test credentials:$(NC)"
+	@echo "$(BLUE) Test credentials:$(NC)"
 	@echo "  Username: $(YELLOW)admin$(NC)"
 	@echo "  Password: $(YELLOW)admin123$(NC)"
 	@echo ""
-	@echo "$(BLUE)📝 Quick commands:$(NC)"
+	@echo "$(BLUE) Quick commands:$(NC)"
 	@echo "  • Stop services:          $(YELLOW)make lite-down$(NC)"
 	@echo "  • View logs:              $(YELLOW)make lite-logs$(NC)"
 	@echo "  • Check status:           $(YELLOW)make lite-status$(NC)"
 	@echo ""
-	@echo "$(GREEN)No SSL setup needed - just HTTP! 🚀$(NC)"
+	@echo "$(GREEN)No SSL setup needed - just HTTP! $(NC)"
 
 .PHONY: dev-setup
 dev-setup: ## Setup development environment with hot reload
@@ -490,13 +490,13 @@ dev-setup: ## Setup development environment with hot reload
 .PHONY: production-deploy
 production-deploy: ## Deploy to production environment
 	@echo "$(BLUE)Deploying to production...$(NC)"
-	@echo "$(RED)⚠️  WARNING: This will deploy to production!$(NC)"
+	@echo "$(RED) WARNING: This will deploy to production!$(NC)"
 	@read -p "Are you sure? (y/N): " confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
 		echo "$(YELLOW)Deploying to production...$(NC)"; \
 		$(MAKE) prod-build; \
 		$(MAKE) prod-up; \
-		echo "$(GREEN)✅ Production deployment completed!$(NC)"; \
+		echo "$(GREEN) Production deployment completed!$(NC)"; \
 	else \
 		echo "$(YELLOW)Production deployment cancelled$(NC)"; \
 	fi
@@ -509,24 +509,24 @@ status: ## Show status of all services and system info
 	@echo "\n$(YELLOW)System Resources:$(NC)"
 	@docker stats --no-stream 2>/dev/null || echo "$(RED)Docker not available$(NC)"
 	@echo "\n$(YELLOW)Application Health:$(NC)"
-	@curl -s -f http://localhost/health >/dev/null && echo "$(GREEN)✅ HTTP Health: OK$(NC)" || echo "$(RED)❌ HTTP Health: FAILED$(NC)"
-	@curl -s -k -f https://localhost/health >/dev/null && echo "$(GREEN)✅ HTTPS Health: OK$(NC)" || echo "$(RED)❌ HTTPS Health: FAILED$(NC)"
+	@curl -s -f http://localhost/health >/dev/null && echo "$(GREEN) HTTP Health: OK$(NC)" || echo "$(RED) HTTP Health: FAILED$(NC)"
+	@curl -s -k -f https://localhost/health >/dev/null && echo "$(GREEN) HTTPS Health: OK$(NC)" || echo "$(RED) HTTPS Health: FAILED$(NC)"
 
 .PHONY: troubleshoot
 troubleshoot: ## Troubleshoot common issues
 	@echo "$(BLUE)Spy Cats API - Troubleshooting$(NC)"
 	@echo "$(YELLOW)Checking Docker...$(NC)"
-	@docker --version >/dev/null 2>&1 && echo "$(GREEN)✅ Docker: OK$(NC)" || echo "$(RED)❌ Docker: NOT FOUND$(NC)"
+	@docker --version >/dev/null 2>&1 && echo "$(GREEN) Docker: OK$(NC)" || echo "$(RED) Docker: NOT FOUND$(NC)"
 	@echo "$(YELLOW)Checking Docker Compose...$(NC)"
-	@docker-compose --version >/dev/null 2>&1 && echo "$(GREEN)✅ Docker Compose: OK$(NC)" || echo "$(RED)❌ Docker Compose: NOT FOUND$(NC)"
+	@docker-compose --version >/dev/null 2>&1 && echo "$(GREEN) Docker Compose: OK$(NC)" || echo "$(RED) Docker Compose: NOT FOUND$(NC)"
 	@echo "$(YELLOW)Checking Go...$(NC)"
-	@go version >/dev/null 2>&1 && echo "$(GREEN)✅ Go: OK$(NC)" || echo "$(RED)❌ Go: NOT FOUND$(NC)"
+	@go version >/dev/null 2>&1 && echo "$(GREEN) Go: OK$(NC)" || echo "$(RED) Go: NOT FOUND$(NC)"
 	@echo "$(YELLOW)Checking ports...$(NC)"
-	@netstat -tuln 2>/dev/null | grep -q ":8080" && echo "$(RED)❌ Port 8080: IN USE$(NC)" || echo "$(GREEN)✅ Port 8080: FREE$(NC)"
-	@netstat -tuln 2>/dev/null | grep -q ":80" && echo "$(RED)❌ Port 80: IN USE$(NC)" || echo "$(GREEN)✅ Port 80: FREE$(NC)"
-	@netstat -tuln 2>/dev/null | grep -q ":443" && echo "$(RED)❌ Port 443: IN USE$(NC)" || echo "$(GREEN)✅ Port 443: FREE$(NC)"
+	@netstat -tuln 2>/dev/null | grep -q ":8080" && echo "$(RED) Port 8080: IN USE$(NC)" || echo "$(GREEN) Port 8080: FREE$(NC)"
+	@netstat -tuln 2>/dev/null | grep -q ":80" && echo "$(RED) Port 80: IN USE$(NC)" || echo "$(GREEN) Port 80: FREE$(NC)"
+	@netstat -tuln 2>/dev/null | grep -q ":443" && echo "$(RED) Port 443: IN USE$(NC)" || echo "$(GREEN) Port 443: FREE$(NC)"
 	@echo "$(YELLOW)Checking SSL certificates...$(NC)"
-	@[ -f ssl/nginx.crt ] && [ -f ssl/nginx.key ] && echo "$(GREEN)✅ SSL Certificates: OK$(NC)" || echo "$(RED)❌ SSL Certificates: MISSING$(NC)"
+	@[ -f ssl/nginx.crt ] && [ -f ssl/nginx.key ] && echo "$(GREEN) SSL Certificates: OK$(NC)" || echo "$(RED) SSL Certificates: MISSING$(NC)"
 
 # ============================================================================
 # Commands for reviewers/evaluators
@@ -534,12 +534,12 @@ troubleshoot: ## Troubleshoot common issues
 
 .PHONY: reviewer-setup
 reviewer-setup: ## Complete setup for project reviewers (one command to rule them all)
-	@echo "$(BLUE)🔍 SPY CATS API - REVIEWER SETUP$(NC)"
+	@echo "$(BLUE) SPY CATS API - REVIEWER SETUP$(NC)"
 	@echo "$(BLUE)================================================$(NC)"
 	@echo "$(YELLOW)This command will set up the entire Spy Cats API project from scratch$(NC)"
 	@echo "$(YELLOW)Perfect for reviewers, evaluators, and new team members$(NC)"
 	@echo ""
-	@echo "$(BLUE)📋 Setup includes:$(NC)"
+	@echo "$(BLUE) Setup includes:$(NC)"
 	@echo "  • Installing development tools (swag, golangci-lint, etc.)"
 	@echo "  • Downloading Go dependencies"
 	@echo "  • Generating SSL certificates for HTTPS"
@@ -550,7 +550,7 @@ reviewer-setup: ## Complete setup for project reviewers (one command to rule the
 	@echo ""
 	@read -p "$(YELLOW)Continue with setup? (y/N): $(NC)" confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		echo "$(GREEN)🚀 Starting reviewer setup...$(NC)"; \
+		echo "$(GREEN) Starting reviewer setup...$(NC)"; \
 	else \
 		echo "$(YELLOW)Setup cancelled$(NC)"; \
 		exit 1; \
@@ -581,35 +581,35 @@ reviewer-setup: ## Complete setup for project reviewers (one command to rule the
 	@sleep 15
 	$(MAKE) health-check || echo "$(YELLOW)Health check failed - services may still be starting$(NC)"
 	@echo ""
-	@echo "$(GREEN)🎉 REVIEWER SETUP COMPLETED SUCCESSFULLY!$(NC)"
+	@echo "$(GREEN) REVIEWER SETUP COMPLETED SUCCESSFULLY!$(NC)"
 	@echo "$(BLUE)================================================$(NC)"
-	@echo "$(GREEN)✅ Spy Cats API is now running and ready for review$(NC)"
+	@echo "$(GREEN) Spy Cats API is now running and ready for review$(NC)"
 	@echo ""
-	@echo "$(BLUE)🌐 Available endpoints:$(NC)"
-	@echo "  📖 Swagger Documentation: $(YELLOW)https://localhost/swagger/index.html$(NC)"
-	@echo "  🔍 Health Check:          $(YELLOW)https://localhost/health$(NC)"
-	@echo "  🐱 API Base URL:          $(YELLOW)https://localhost/v1$(NC)"
-	@echo "  🔐 Login Endpoint:        $(YELLOW)https://localhost/v1/auth/login$(NC)"
+	@echo "$(BLUE) Available endpoints:$(NC)"
+	@echo "  Swagger Documentation: $(YELLOW)https://localhost/swagger/index.html$(NC)"
+	@echo "  Health Check:          $(YELLOW)https://localhost/health$(NC)"
+	@echo "  API Base URL:          $(YELLOW)https://localhost/v1$(NC)"
+	@echo "  Login Endpoint:        $(YELLOW)https://localhost/v1/auth/login$(NC)"
 	@echo ""
-	@echo "$(BLUE)🔑 Test credentials:$(NC)"
+	@echo "$(BLUE) Test credentials:$(NC)"
 	@echo "  Username: $(YELLOW)admin$(NC)"
 	@echo "  Password: $(YELLOW)admin123$(NC)"
 	@echo ""
-	@echo "$(BLUE)📝 Quick test commands:$(NC)"
+	@echo "$(BLUE) Quick test commands:$(NC)"
 	@echo "  • Run all tests:          $(YELLOW)make reviewer-test$(NC)"
 	@echo "  • Check system status:    $(YELLOW)make status$(NC)"
 	@echo "  • View logs:              $(YELLOW)make logs$(NC)"
 	@echo "  • Stop services:          $(YELLOW)make docker-compose-down$(NC)"
 	@echo ""
-	@echo "$(GREEN)Happy reviewing! 🚀$(NC)"
+	@echo "$(GREEN)Happy reviewing! $(NC)"
 
 .PHONY: reviewer-test
 reviewer-test: ## Complete test suite for project reviewers
-	@echo "$(BLUE)🧪 SPY CATS API - REVIEWER TEST SUITE$(NC)"
+	@echo "$(BLUE) SPY CATS API - REVIEWER TEST SUITE$(NC)"
 	@echo "$(BLUE)================================================$(NC)"
 	@echo "$(YELLOW)Running comprehensive test suite for project evaluation$(NC)"
 	@echo ""
-	@echo "$(BLUE)📋 Test suite includes:$(NC)"
+	@echo "$(BLUE) Test suite includes:$(NC)"
 	@echo "  • Unit tests with coverage report"
 	@echo "  • Integration tests with real database"
 	@echo "  • API endpoint testing"
@@ -619,8 +619,8 @@ reviewer-test: ## Complete test suite for project reviewers
 	@echo "  • Live API health verification"
 	@echo ""
 	@echo "$(BLUE)Step 1/6: Verifying services are running$(NC)"
-	@docker-compose ps | grep -q "Up" || (echo "$(RED)❌ Services not running. Run 'make reviewer-setup' first$(NC)" && exit 1)
-	@echo "$(GREEN)✅ Services are running$(NC)"
+	@docker-compose ps | grep -q "Up" || (echo "$(RED) Services not running. Run 'make reviewer-setup' first$(NC)" && exit 1)
+	@echo "$(GREEN) Services are running$(NC)"
 	@echo ""
 	@echo "$(BLUE)Step 2/6: Running unit tests with coverage$(NC)"
 	$(MAKE) test-coverage
@@ -629,18 +629,18 @@ reviewer-test: ## Complete test suite for project reviewers
 	$(MAKE) test-integration
 	@echo ""
 	@echo "$(BLUE)Step 4/6: Running code quality checks$(NC)"
-	$(MAKE) lint || echo "$(YELLOW)⚠️  Linting issues found (non-critical)$(NC)"
+	$(MAKE) lint || echo "$(YELLOW)️  Linting issues found (non-critical)$(NC)"
 	@echo ""
 	@echo "$(BLUE)Step 5/6: Testing live API endpoints$(NC)"
 	@echo "$(YELLOW)Testing authentication...$(NC)"
 	@curl -s -k -X POST https://localhost/v1/auth/login \
 		-H "Content-Type: application/json" \
 		-d '{"username": "admin", "password": "admin123"}' | \
-		grep -q "access_token" && echo "$(GREEN)✅ Authentication: WORKING$(NC)" || echo "$(RED)❌ Authentication: FAILED$(NC)"
+		grep -q "access_token" && echo "$(GREEN) Authentication: WORKING$(NC)" || echo "$(RED) Authentication: FAILED$(NC)"
 	@echo "$(YELLOW)Testing health endpoint...$(NC)"
-	@curl -s -k https://localhost/health | grep -q "OK" && echo "$(GREEN)✅ Health Check: WORKING$(NC)" || echo "$(RED)❌ Health Check: FAILED$(NC)"
+	@curl -s -k https://localhost/health | grep -q "OK" && echo "$(GREEN) Health Check: WORKING$(NC)" || echo "$(RED)❌ Health Check: FAILED$(NC)"
 	@echo "$(YELLOW)Testing Swagger documentation...$(NC)"
-	@curl -s -k https://localhost/swagger/index.html | grep -q "swagger" && echo "$(GREEN)✅ Swagger Docs: WORKING$(NC)" || echo "$(RED)❌ Swagger Docs: FAILED$(NC)"
+	@curl -s -k https://localhost/swagger/index.html | grep -q "swagger" && echo "$(GREEN) Swagger Docs: WORKING$(NC)" || echo "$(RED)❌ Swagger Docs: FAILED$(NC)"
 	@echo ""
 	@echo "$(BLUE)Step 6/6: Generating test report$(NC)"
 	@echo "$(BLUE)================================================$(NC)"

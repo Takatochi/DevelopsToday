@@ -41,7 +41,7 @@ vendor/
 .env
 .env.local
 .env.*.local
-.env.prod
+# Keep .env.prod for production configuration template
 
 # Logs
 *.log
