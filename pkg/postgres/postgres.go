@@ -32,7 +32,6 @@ func New(url string, opts ...Option) (*Postgres, error) {
 		connTimeout:  _defaultConnTimeout,
 	}
 
-	// Custom options
 	for _, opt := range opts {
 		opt(pg)
 	}
