@@ -1,51 +1,41 @@
-package controller
+package http
 
 import (
 	"DevelopsToday/config"
+	// Swagger documentation
+	//_ "DevelopsToday/docs"
+	"DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/pkg/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// NewRouter -.
+// NewV1Controller - inits controller for v1 API.
 // Swagger spec:
-// @title       KnowledgeHub API
-// @description API for Knowledge Hub application
+// @title       API V1
+// @description API V1 for DevelopsToday application
 // @version     1.0
 // @host        localhost:8080
 // @BasePath    /v1
-// @securityDefinitions.apikey BearerAuth
 // @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
-func NewRouter(engine *gin.Engine, cfg *config.Config, l logger.Interface) {
+func NewV1Controller(engine *gin.Engine, cfg *config.Config, l logger.Interface) {
 	// Middleware
 	engine.Use(middleware.LoggerMiddleware(l))
 	engine.Use(middleware.RecoveryMiddleware(l))
-
-	// Створюємо сервіси
-	jwtService := services.NewJWTService(cfg)
-
-	// TODO: Додати userService коли буде реалізований репозиторій
-	// userService := services.NewUserService(userRepo)
 
 	//// Swagger
 	if cfg.Swagger.Enabled {
 		engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	// K8s health probe
-	engine.GET("/healthz", func(ctx *gin.Context) {
-		ctx.Status(http.StatusOK)
-	})
-
 	// API v1 group
 	v1Group := engine.Group("/v1")
 	{
-		// Auth роути
-		v1.NewAuthRoutes(v1Group, jwtService, nil, l) // nil замість userService поки що
-
-		v1.NewTranslationRoutes(v1Group, jwtService, l)
+		v1Group.GET("/ping", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{"message": "pong"})
+		})
 	}
 }

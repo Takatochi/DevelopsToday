@@ -1,4 +1,4 @@
-package cats
+package cat
 
 import (
 	"DevelopsToday/internal/models"
