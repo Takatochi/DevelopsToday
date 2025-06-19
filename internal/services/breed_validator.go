@@ -2,14 +2,14 @@ package services
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 )
 
-const _url = "https://api.thecatapi.com/v1/breeds"
+// Изменяем константу на переменную, чтобы можно было менять в тестах
+var breedAPIURL = "https://api.thecatapi.com/v1/breeds"
 
 type Breed struct {
 	Name string `json:"name"`
@@ -18,11 +18,11 @@ type Validator interface {
 	IsValid(breedName string) bool
 }
 type serviceBreed struct {
-	cache      []Breed
 	lastFetch  time.Time
-	mutex      sync.Mutex
 	httpClient *http.Client
+	cache      []Breed
 	ttl        time.Duration
+	mutex      sync.Mutex
 }
 
 func NewBreed() Validator {
@@ -51,19 +51,14 @@ func (s *serviceBreed) IsValid(breedName string) bool {
 }
 
 func (s *serviceBreed) fetchBreeds() error {
-	resp, err := s.httpClient.Get(_url)
+	resp, err := s.httpClient.Get(breedAPIURL)
 	if err != nil {
 		return err
 	}
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-		if err != nil {
-
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 
 	var breeds []Breed
-	if err = json.NewDecoder(resp.Body).Decode(&breeds); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&breeds); err != nil {
 		return err
 	}
 

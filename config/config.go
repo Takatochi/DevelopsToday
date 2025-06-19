@@ -8,12 +8,14 @@ import (
 
 type (
 	Config struct {
-		App     App
-		HTTP    HTTP
-		Log     Log
-		PG      PG
-		Swagger Swagger
 		JWT     JWT
+		App     App
+		PG      PG
+		Log     Log
+		HTTP    HTTP
+		Swagger Swagger
+		Cache   Cache
+		Redis   Redis
 	}
 
 	App struct {
@@ -31,8 +33,8 @@ type (
 	}
 
 	PG struct {
-		PoolMax int    `env:"PG_POOL_MAX,required"`
 		URL     string `env:"PG_URL,required"`
+		PoolMax int    `env:"PG_POOL_MAX,required"`
 	}
 
 	Swagger struct {
@@ -41,9 +43,19 @@ type (
 
 	JWT struct {
 		Secret           string `env:"JWT_SECRET,required"`
+		SigningAlgorithm string `env:"JWT_SIGNING_ALGORITHM" envDefault:"HS256"`
 		AccessTokenTTL   int    `env:"JWT_ACCESS_TOKEN_TTL" envDefault:"900"`
 		RefreshTokenTTL  int    `env:"JWT_REFRESH_TOKEN_TTL" envDefault:"604800"`
-		SigningAlgorithm string `env:"JWT_SIGNING_ALGORITHM" envDefault:"HS256"`
+	}
+
+	Cache struct {
+		Type string `env:"CACHE_TYPE" envDefault:"redis"`
+	}
+
+	Redis struct {
+		URL      string `env:"REDIS_URL" envDefault:"redis://localhost:6379"`
+		Password string `env:"REDIS_PASSWORD" envDefault:""`
+		DB       int    `env:"REDIS_DB" envDefault:"0"`
 	}
 )
 

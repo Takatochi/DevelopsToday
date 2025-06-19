@@ -17,12 +17,11 @@ const (
 )
 
 type Postgres struct {
+	Builder      squirrel.StatementBuilderType
+	Pool         *pgxpool.Pool
 	maxPoolSize  int
 	connAttempts int
 	connTimeout  time.Duration
-
-	Builder squirrel.StatementBuilderType
-	Pool    *pgxpool.Pool
 }
 
 func New(url string, opts ...Option) (*Postgres, error) {

@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"DevelopsToday/pkg/logger"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"strings"
+
+	"DevelopsToday/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,12 +28,10 @@ func buildPanicMessage(ctx *gin.Context, err interface{}) string {
 func RecoveryMiddleware(l logger.Interface) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer func() {
-
 			if err := recover(); err != nil {
 				l.Error(buildPanicMessage(ctx, err))
 				ctx.AbortWithStatus(http.StatusInternalServerError)
 			}
-
 		}()
 		ctx.Next()
 	}

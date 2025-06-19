@@ -1,10 +1,11 @@
 package target
 
 import (
-	"DevelopsToday/internal/models"
-	"DevelopsToday/internal/services"
 	"net/http"
 	"strconv"
+
+	"DevelopsToday/internal/models"
+	"DevelopsToday/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,16 +21,13 @@ func NewImplService(targetContext services.TargetContext) *Service {
 }
 
 type Handler struct {
-	missions []models.Mission
-	Service  *Service
+	Service *Service
 }
 
 // UpdateNotesRequest represents request body for updating target notes
 type UpdateNotesRequest struct {
 	Notes string `json:"notes" example:"Target usually visits gym at 6 PM"`
 }
-
-var targetIDCounter uint = 1
 
 // Add godoc
 //
@@ -38,34 +36,37 @@ var targetIDCounter uint = 1
 //	@Tags			targets
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id		path		int				true	"Mission ID"
 //	@Param			input	body		models.Target	true	"Target info"
 //	@Success		201		{object}	models.Target
 //	@Failure		400		{object}	map[string]interface{}
+//	@Failure		401		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Router			/missions/{id}/targets [post]
 func (h *Handler) Add(ctx *gin.Context) {
-	mid, _ := strconv.Atoi(ctx.Param("id"))
+	mid, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mission ID"})
+		return
+	}
+
 	var input models.Target
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target"})
 		return
 	}
 
-	for i := range h.missions {
-		if int(h.missions[i].ID) == mid {
-			if h.missions[i].Complete {
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": "Mission is completed"})
-				return
-			}
-			input.ID = targetIDCounter
-			targetIDCounter++
-			h.missions[i].Targets = append(h.missions[i].Targets, input)
-			ctx.JSON(http.StatusCreated, input)
-			return
+	if err := h.Service._targetContext.Add(ctx, uint(mid), &input); err != nil {
+		if err.Error() == "cannot add target to completed mission" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
 		}
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+
+	ctx.JSON(http.StatusCreated, input)
 }
 
 // UpdateNotes godoc
@@ -75,43 +76,45 @@ func (h *Handler) Add(ctx *gin.Context) {
 //	@Tags			targets
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id		path		int					true	"Mission ID"
 //	@Param			tid		path		int					true	"Target ID"
 //	@Param			input	body		UpdateNotesRequest	true	"Target notes"
 //	@Success		200		{object}	models.Target
 //	@Failure		400		{object}	map[string]interface{}
+//	@Failure		401		{object}	map[string]interface{}
 //	@Failure		403		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Router			/missions/{id}/targets/{tid}/notes [patch]
 func (h *Handler) UpdateNotes(ctx *gin.Context) {
-	mid, _ := strconv.Atoi(ctx.Param("id"))
-	tid, _ := strconv.Atoi(ctx.Param("tid"))
+	mid, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mission ID"})
+		return
+	}
+
+	tid, err := strconv.Atoi(ctx.Param("tid"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target ID"})
+		return
+	}
+
 	var body UpdateNotesRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notes"})
 		return
 	}
 
-	for i := range h.missions {
-		if int(h.missions[i].ID) == mid {
-			if h.missions[i].Complete {
-				ctx.JSON(http.StatusForbidden, gin.H{"error": "Mission is completed"})
-				return
-			}
-			for j := range h.missions[i].Targets {
-				if int(h.missions[i].Targets[j].ID) == tid {
-					if h.missions[i].Targets[j].Complete {
-						ctx.JSON(http.StatusForbidden, gin.H{"error": "Target is completed"})
-						return
-					}
-					h.missions[i].Targets[j].Notes = body.Notes
-					ctx.JSON(http.StatusOK, h.missions[i].Targets[j])
-					return
-				}
-			}
+	if err := h.Service._targetContext.UpdateNotes(ctx, uint(mid), uint(tid), body.Notes); err != nil {
+		if err.Error() == "mission is completed" || err.Error() == "target is completed" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Target or Mission not found"})
 		}
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Target or Mission not found"})
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Notes updated successfully"})
 }
 
 // MarkComplete godoc
@@ -120,26 +123,26 @@ func (h *Handler) UpdateNotes(ctx *gin.Context) {
 //	@Description	Mark a specific target as completed
 //	@Tags			targets
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path		int	true	"Mission ID"
 //	@Param			tid	path		int	true	"Target ID"
 //	@Success		200	{object}	models.Target
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id}/targets/{tid}/complete [post]
 func (h *Handler) MarkComplete(ctx *gin.Context) {
-	mid, _ := strconv.Atoi(ctx.Param("id"))
-	tid, _ := strconv.Atoi(ctx.Param("tid"))
-	for i := range h.missions {
-		if int(h.missions[i].ID) == mid {
-			for j := range h.missions[i].Targets {
-				if int(h.missions[i].Targets[j].ID) == tid {
-					h.missions[i].Targets[j].Complete = true
-					ctx.JSON(http.StatusOK, h.missions[i].Targets[j])
-					return
-				}
-			}
-		}
+	tid, err := strconv.Atoi(ctx.Param("tid"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target ID"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
+
+	if err := h.Service._targetContext.MarkComplete(ctx, uint(tid)); err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Target marked as complete"})
 }
 
 // Delete godoc
@@ -148,29 +151,35 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 //	@Description	Delete a target from mission
 //	@Tags			targets
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path	int	true	"Mission ID"
 //	@Param			tid	path	int	true	"Target ID"
 //	@Success		204	"No Content"
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		403	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id}/targets/{tid} [delete]
 func (h *Handler) Delete(ctx *gin.Context) {
-	mid, _ := strconv.Atoi(ctx.Param("id"))
-	tid, _ := strconv.Atoi(ctx.Param("tid"))
-	for i := range h.missions {
-		if int(h.missions[i].ID) == mid {
-			for j, t := range h.missions[i].Targets {
-				if int(t.ID) == tid {
-					if t.Complete {
-						ctx.JSON(http.StatusForbidden, gin.H{"error": "Cannot delete completed target"})
-						return
-					}
-					h.missions[i].Targets = append(h.missions[i].Targets[:j], h.missions[i].Targets[j+1:]...)
-					ctx.Status(http.StatusNoContent)
-					return
-				}
-			}
-		}
+	mid, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mission ID"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
+
+	tid, err := strconv.Atoi(ctx.Param("tid"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target ID"})
+		return
+	}
+
+	if err := h.Service._targetContext.DeleteByID(ctx, uint(mid), uint(tid)); err != nil {
+		if err.Error() == "cannot delete completed target" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
+		}
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

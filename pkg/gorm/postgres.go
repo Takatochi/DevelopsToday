@@ -22,7 +22,7 @@ func Connect(dsn string, opts ...GormOption) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = sqlDB.Ping(); err != nil {
+	if err := sqlDB.Ping(); err != nil {
 		return nil, err
 	}
 
@@ -33,5 +33,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Cat{},
 		&models.Mission{},
 		&models.Target{},
+		&models.User{},
 	)
 }

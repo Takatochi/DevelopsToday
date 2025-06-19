@@ -1,8 +1,9 @@
 package postgres
 
 import (
-	"DevelopsToday/internal/models"
 	"context"
+
+	"DevelopsToday/internal/models"
 )
 
 type TargetRepository struct {

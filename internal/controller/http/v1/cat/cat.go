@@ -1,10 +1,11 @@
 package cat
 
 import (
-	"DevelopsToday/internal/models"
-	"DevelopsToday/internal/services"
 	"net/http"
 	"strconv"
+
+	"DevelopsToday/internal/models"
+	"DevelopsToday/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,21 +23,21 @@ func NewImplService(validator services.Validator, catCtx services.CatContext) *S
 }
 
 type Handler struct {
-	cats    []models.Cat
 	Service *Service
 }
 
 // Create godoc
 //
-//	@Summary		Create a new
 //	@Summary		Create a new cat
 //	@Description	Create a new cat in the system
 //	@Tags			cats
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			cat	body		models.Cat	true	"Cat info"
 //	@Success		201	{object}	models.Cat
 //	@Failure		400	{object}	map[string]interface{}
+//	@Failure		401	{object}	map[string]interface{}
 //	@Router			/cats [post]
 func (h *Handler) Create(ctx *gin.Context) {
 	var newCat models.Cat
@@ -64,7 +65,9 @@ func (h *Handler) Create(ctx *gin.Context) {
 //	@Description	Get list of all cats
 //	@Tags			cats
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Success		200	{array}	models.Cat
+//	@Failure		401	{object}	map[string]interface{}
 //	@Router			/cats [get]
 func (h *Handler) List(ctx *gin.Context) {
 	cats, err := h.Service._catContext.GetAll(ctx)
@@ -83,8 +86,10 @@ func (h *Handler) List(ctx *gin.Context) {
 //	@Description	Get cat details by ID
 //	@Tags			cats
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path		int	true	"Cat ID"
 //	@Success		200	{object}	models.Cat
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/cats/{id} [get]
 func (h *Handler) GetByID(ctx *gin.Context) {
@@ -110,10 +115,12 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 //	@Tags			cats
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id		path		int		true	"Cat ID"
 //	@Param			salary	body		float64	true	"New salary"
 //	@Success		200		{object}	models.Cat
 //	@Failure		400		{object}	map[string]interface{}
+//	@Failure		401		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Router			/cats/{id}/salary [patch]
 func (h *Handler) UpdateSalary(ctx *gin.Context) {
@@ -126,12 +133,12 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 	var body struct {
 		Salary float64 `json:"salary"`
 	}
-	if err := ctx.ShouldBindJSON(&body); err != nil {
+	if bindErr := ctx.ShouldBindJSON(&body); bindErr != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
 		return
 	}
 
-	if err := h.Service._catContext.UpdateSalary(ctx, uint(id), body.Salary); err != nil {
+	if updateErr := h.Service._catContext.UpdateSalary(ctx, uint(id), body.Salary); updateErr != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
 		return
 	}
@@ -151,8 +158,10 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 //	@Description	Delete cat by ID
 //	@Tags			cats
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path	int	true	"Cat ID"
 //	@Success		204	"No Content"
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/cats/{id} [delete]
 func (h *Handler) Delete(ctx *gin.Context) {

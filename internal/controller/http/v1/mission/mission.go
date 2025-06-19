@@ -1,10 +1,11 @@
 package mission
 
 import (
-	"DevelopsToday/internal/models"
-	"DevelopsToday/internal/services"
 	"net/http"
 	"strconv"
+
+	"DevelopsToday/internal/models"
+	"DevelopsToday/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,8 +21,7 @@ func NewImplService(missionContext services.MissionContext) *Service {
 }
 
 type Handler struct {
-	missions []models.Mission
-	Service  *Service
+	Service *Service
 }
 
 // CreateRequest represents the request body for creating a mission
@@ -41,9 +41,11 @@ type AssignCatRequest struct {
 //	@Tags			missions
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			input	body		CreateRequest	true	"Mission targets"
 //	@Success		201		{object}	models.Mission
 //	@Failure		400		{object}	map[string]interface{}
+//	@Failure		401		{object}	map[string]interface{}
 //	@Router			/missions [post]
 func (h *Handler) Create(ctx *gin.Context) {
 	var input CreateRequest
@@ -70,7 +72,9 @@ func (h *Handler) Create(ctx *gin.Context) {
 //	@Description	Get all missions
 //	@Tags			missions
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Success		200	{array}	models.Mission
+//	@Failure		401	{object}	map[string]interface{}
 //	@Router			/missions [get]
 func (h *Handler) List(ctx *gin.Context) {
 	missions, err := h.Service._missionContext.GetAll(ctx)
@@ -87,8 +91,10 @@ func (h *Handler) List(ctx *gin.Context) {
 //	@Description	Get mission details by ID
 //	@Tags			missions
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path		int	true	"Mission ID"
 //	@Success		200	{object}	models.Mission
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id} [get]
 func (h *Handler) GetByID(ctx *gin.Context) {
@@ -108,10 +114,12 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 //	@Tags			missions
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id		path		int					true	"Mission ID"
 //	@Param			input	body		AssignCatRequest	true	"Cat info"
 //	@Success		200		{object}	models.Mission
 //	@Failure		400		{object}	map[string]interface{}
+//	@Failure		401		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Router			/missions/{id}/assign [post]
 func (h *Handler) AssignCat(ctx *gin.Context) {
@@ -134,9 +142,11 @@ func (h *Handler) AssignCat(ctx *gin.Context) {
 //	@Description	Mark mission as complete if all targets are completed
 //	@Tags			missions
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path		int	true	"Mission ID"
 //	@Success		200	{object}	models.Mission
 //	@Failure		400	{object}	map[string]interface{}
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id}/complete [post]
 func (h *Handler) MarkComplete(ctx *gin.Context) {
@@ -162,9 +172,11 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 //	@Description	Delete mission if it has no assigned cat
 //	@Tags			missions
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path	int	true	"Mission ID"
 //	@Success		204	"No Content"
 //	@Failure		400	{object}	map[string]interface{}
+//	@Failure		401	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id} [delete]
 func (h *Handler) Delete(ctx *gin.Context) {
@@ -176,7 +188,7 @@ func (h *Handler) Delete(ctx *gin.Context) {
 
 	err = h.Service._missionContext.DeleteByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == "mission has assigned cat" {
+		if err.Error() == "cannot delete assigned mission" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		} else {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})

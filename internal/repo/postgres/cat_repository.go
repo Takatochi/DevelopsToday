@@ -1,8 +1,11 @@
 package postgres
 
 import (
-	"DevelopsToday/internal/models"
 	"context"
+
+	"DevelopsToday/internal/models"
+
+	"gorm.io/gorm"
 )
 
 type CatRepository struct {
@@ -29,11 +32,31 @@ func (r *CatRepository) FindByID(ctx context.Context, id uint) (*models.Cat, err
 }
 
 func (r *CatRepository) UpdateSalary(ctx context.Context, id uint, salary float64) error {
-	return r.store.db.WithContext(ctx).Model(&models.Cat{}).
+	result := r.store.db.WithContext(ctx).Model(&models.Cat{}).
 		Where("id = ?", id).
-		Update("salary", salary).Error
+		Update("salary", salary)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
 func (r *CatRepository) DeleteByID(ctx context.Context, id uint) error {
-	return r.store.db.WithContext(ctx).Delete(&models.Cat{}, id).Error
+	result := r.store.db.WithContext(ctx).Delete(&models.Cat{}, id)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

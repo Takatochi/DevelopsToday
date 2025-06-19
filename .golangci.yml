@@ -1,0 +1,296 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+
+issues:
+  exclude-dirs:
+    - vendor
+    - tmp
+    - build
+    - bin
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_gen\\.go$"
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # Відключаємо перевірку вирівнювання полів структур
+  
+  golint:
+    min-confidence: 0.8
+  
+  gocyclo:
+    min-complexity: 15
+  
+  maligned:
+    suggest-new: true
+  
+  dupl:
+    threshold: 100
+  
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  
+  misspell:
+    locale: US
+  
+  lll:
+    line-length: 120
+  
+  goimports:
+    local-prefixes: DevelopsToday
+  
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  
+  funlen:
+    lines: 100
+    statements: 50
+  
+  gocognit:
+    min-complexity: 20
+  
+  nestif:
+    min-complexity: 4
+  
+  gomnd:
+    settings:
+      mnd:
+        checks: argument,case,condition,operation,return,assign
+        ignored-numbers: 0,1,2,3
+        ignored-functions: strings.SplitN
+  
+  godox:
+    keywords:
+      - NOTE
+      - OPTIMIZE
+      - HACK
+  
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "github.com/sirupsen/logrus"
+            desc: "logging is allowed only by logutils.Log"
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - errcheck
+    - gochecknoinits
+    - goconst
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - nolintlint
+    - rowserrcheck
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - funlen
+        - gocyclo
+        - errcheck
+        - gosec
+        - gocritic
+        - lll
+        - nolintlint
+        - staticcheck
+        - govet
+
+    - path: internal/models/
+      linters:
+        - lll
+        - govet
+
+    - path: docs/
+      linters:
+        - lll
+
+    - path: cmd/
+      linters:
+        - stylecheck
+
+    - path: config/
+      linters:
+        - stylecheck
+        - govet
+
+    - path: pkg/
+      linters:
+        - stylecheck
+
+    - text: "weak cryptographic primitive"
+      linters:
+        - gosec
+
+    - text: "Use of weak random number generator"
+      linters:
+        - gosec
+
+    - text: "Subprocess launched with variable"
+      linters:
+        - gosec
+
+    - text: "G404:"
+      linters:
+        - gosec
+
+    - text: "G204:"
+      linters:
+        - gosec
+
+    - text: "G115:"
+      linters:
+        - gosec
+
+    - text: "is not allowed from list"
+      linters:
+        - depguard
+
+    - text: "field .* is unused"
+      linters:
+        - unused
+
+    - text: "var .* is unused"
+      linters:
+        - unused
+
+    - text: "should rewrite http.NewRequestWithContext"
+      linters:
+        - noctx
+
+    - text: "do not pass a nil Context"
+      linters:
+        - staticcheck
+
+    - text: "empty branch"
+      linters:
+        - staticcheck
+
+    - text: "at least one file in a package should have a package comment"
+      linters:
+        - stylecheck
+
+    - text: "comment on exported .* should be of the form"
+      linters:
+        - stylecheck
+
+    - text: "unnecessary leading newline"
+      linters:
+        - whitespace
+
+    - text: "unnecessary trailing newline"
+      linters:
+        - whitespace
+
+    - text: "fieldalignment:"
+      linters:
+        - govet
+
+    - text: "shadow:"
+      linters:
+        - govet
+
+    - text: "unusedwrite:"
+      linters:
+        - govet
+
+    - text: "struct field .* has json tag but is not exported"
+      linters:
+        - govet
+
+    - text: "integer overflow conversion"
+      linters:
+        - gosec
+
+    - text: "G115:"
+      linters:
+        - gosec
+
+    - text: "fieldalignment:"
+      linters:
+        - govet
+
+    - text: "unnecessaryBlock:"
+      linters:
+        - gocritic
+
+    - text: "httpNoBody:"
+      linters:
+        - gocritic
+
+    - text: "unnecessary trailing newline"
+      linters:
+        - whitespace
+
+    - text: "unnecessary leading newline"
+      linters:
+        - whitespace
+
+    - text: "cyclomatic complexity"
+      linters:
+        - gocyclo
+
+    - text: "G115:"
+      linters:
+        - gosec
+
+    - text: "integer overflow conversion"
+      linters:
+        - gosec
+
+    - text: "unnecessaryBlock:"
+      linters:
+        - gocritic
+
+    - text: "fieldalignment:"
+      linters:
+        - govet
+
+    - text: "struct with .* pointer bytes could be"
+      linters:
+        - govet
+
+  exclude-use-default: false
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  uniq-by-line: true
+
+severity:
+  default-severity: error
+  case-sensitive: false

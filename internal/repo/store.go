@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"DevelopsToday/internal/models"
 	"context"
+
+	"DevelopsToday/internal/models"
 )
 
 // Repository implement from interface Store
@@ -10,7 +11,8 @@ type Store interface {
 	Cat() CatRepository
 	Mission() MissionRepository
 	Target() TargetRepository
-	//... other entity
+	User() UserRepository
+	// ... other entity
 }
 
 type CatRepository interface {
@@ -33,4 +35,14 @@ type TargetRepository interface {
 	UpdateNotes(ctx context.Context, targetID uint, notes string) error
 	MarkComplete(ctx context.Context, targetID uint) error
 	DeleteByID(ctx context.Context, id uint) error
+}
+
+type UserRepository interface {
+	Create(ctx context.Context, user *models.User) error
+	FindByID(ctx context.Context, id uint) (*models.User, error)
+	FindByUsername(ctx context.Context, username string) (*models.User, error)
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
+	Update(ctx context.Context, user *models.User) error
+	DeleteByID(ctx context.Context, id uint) error
+	FindAll(ctx context.Context, limit, offset int) ([]*models.User, error)
 }
