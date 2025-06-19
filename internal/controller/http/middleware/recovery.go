@@ -34,7 +34,6 @@ func RecoveryMiddleware(l logger.Interface) gin.HandlerFunc {
 			}
 
 		}()
-
 		ctx.Next()
 	}
 }
