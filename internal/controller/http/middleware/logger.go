@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"DevelopsToday/pkg/logger"
 	"strconv"
 	"strings"
 
-	"KnowledgeHub/pkg/logger"
+
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,10 +28,9 @@ func buildRequestMessage(ctx *gin.Context, status int, bodySize int) string {
 
 func LoggerMiddleware(l logger.Interface) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Перед виконанням основного хендлера
+
 		ctx.Next()
 
-		// Після того як обробка завершена
 		status := ctx.Writer.Status()
 		bodySize := ctx.Writer.Size()
 
