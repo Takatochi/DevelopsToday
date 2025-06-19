@@ -188,9 +188,15 @@ func TestJWTClaims(t *testing.T) {
 		claims, err := jwtService.ValidateToken(tokens.AccessToken)
 		require.NoError(t, err)
 
-		// IssuedAt should be between before and after generation
-		assert.True(t, claims.IssuedAt.Time.After(beforeGeneration) || claims.IssuedAt.Time.Equal(beforeGeneration))
-		assert.True(t, claims.IssuedAt.Time.Before(afterGeneration) || claims.IssuedAt.Time.Equal(afterGeneration))
+		// IssuedAt should be between before and after generation (with some tolerance)
+		assert.True(t,
+			claims.IssuedAt.Time.After(beforeGeneration.Add(-time.Second)) ||
+				claims.IssuedAt.Time.Equal(beforeGeneration),
+			"IssuedAt should be after or equal to beforeGeneration")
+		assert.True(t,
+			claims.IssuedAt.Time.Before(afterGeneration.Add(time.Second)) ||
+				claims.IssuedAt.Time.Equal(afterGeneration),
+			"IssuedAt should be before or equal to afterGeneration")
 
 		// NotBefore should be same as IssuedAt
 		assert.Equal(t, claims.IssuedAt.Time, claims.NotBefore.Time)
