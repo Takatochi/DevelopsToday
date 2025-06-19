@@ -9,15 +9,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Service interface {
-	services.Validator
-}
-type Handler struct {
-	cats    []models.Cat
-	Service Service
+type Service struct {
+	_validator  services.Validator
+	_catContext services.CatContext
 }
 
-var idCounter uint = 1
+func NewImplService(validator services.Validator, catCtx services.CatContext) *Service {
+	return &Service{
+		_validator:  validator,
+		_catContext: catCtx,
+	}
+}
+
+type Handler struct {
+	cats    []models.Cat
+	Service *Service
+}
 
 // Create godoc
 //
@@ -38,14 +45,15 @@ func (h *Handler) Create(ctx *gin.Context) {
 		return
 	}
 
-	if !h.Service.IsValid(newCat.Breed) {
+	if !h.Service._validator.IsValid(newCat.Breed) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid breed"})
 		return
 	}
 
-	newCat.ID = idCounter
-	idCounter++
-	h.cats = append(h.cats, newCat)
+	if err := h.Service._catContext.Create(ctx, &newCat); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create cat"})
+		return
+	}
 
 	ctx.JSON(http.StatusCreated, newCat)
 }
@@ -59,7 +67,12 @@ func (h *Handler) Create(ctx *gin.Context) {
 //	@Success		200	{array}	models.Cat
 //	@Router			/cats [get]
 func (h *Handler) List(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, h.cats)
+	cats, err := h.Service._catContext.GetAll(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cats"})
+		return
+	}
+	ctx.JSON(http.StatusOK, cats)
 }
 
 //	@Des
@@ -75,14 +88,19 @@ func (h *Handler) List(ctx *gin.Context) {
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/cats/{id} [get]
 func (h *Handler) GetByID(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
-	for _, cat := range h.cats {
-		if int(cat.ID) == id {
-			ctx.JSON(http.StatusOK, cat)
-			return
-		}
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+
+	cat, err := h.Service._catContext.GetByID(ctx, uint(id))
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, cat)
 }
 
 // UpdateSalary godoc
@@ -99,7 +117,12 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 //	@Failure		404		{object}	map[string]interface{}
 //	@Router			/cats/{id}/salary [patch]
 func (h *Handler) UpdateSalary(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
 	var body struct {
 		Salary float64 `json:"salary"`
 	}
@@ -108,14 +131,18 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 		return
 	}
 
-	for i := range h.cats {
-		if int(h.cats[i].ID) == id {
-			h.cats[i].Salary = body.Salary
-			ctx.JSON(http.StatusOK, h.cats[i])
-			return
-		}
+	if err := h.Service._catContext.UpdateSalary(ctx, uint(id), body.Salary); err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+
+	cat, err := h.Service._catContext.GetByID(ctx, uint(id))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Salary updated, but cat fetch failed"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, cat)
 }
 
 // Delete godoc
@@ -129,13 +156,17 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/cats/{id} [delete]
 func (h *Handler) Delete(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
-	for i, cat := range h.cats {
-		if int(cat.ID) == id {
-			h.cats = append(h.cats[:i], h.cats[i+1:]...)
-			ctx.Status(http.StatusNoContent)
-			return
-		}
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+
+	err = h.Service._catContext.DeleteByID(ctx, uint(id))
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

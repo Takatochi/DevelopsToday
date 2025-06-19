@@ -2,18 +2,27 @@ package mission
 
 import (
 	"DevelopsToday/internal/models"
+	"DevelopsToday/internal/services"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
-	missions []models.Mission
+type Service struct {
+	_missionContext services.MissionContext
 }
 
-var missionIDCounter uint = 1
-var targetIDCounter uint = 1
+func NewImplService(missionContext services.MissionContext) *Service {
+	return &Service{
+		_missionContext: missionContext,
+	}
+}
+
+type Handler struct {
+	missions []models.Mission
+	Service  *Service
+}
 
 // CreateRequest represents the request body for creating a mission
 type CreateRequest struct {
@@ -26,6 +35,7 @@ type AssignCatRequest struct {
 }
 
 // Create godoc
+//
 //	@Summary		Create a new mission
 //	@Description	Create a new mission with 1-3 targets
 //	@Tags			missions
@@ -42,19 +52,20 @@ func (h *Handler) Create(ctx *gin.Context) {
 		return
 	}
 
-	mission := models.Mission{ID: missionIDCounter}
-	for i := range input.Targets {
-		input.Targets[i].ID = targetIDCounter
-		targetIDCounter++
-		mission.Targets = append(mission.Targets, input.Targets[i])
+	mission := &models.Mission{
+		Targets: input.Targets,
 	}
 
-	missionIDCounter++
-	h.missions = append(h.missions, mission)
+	if err := h.Service._missionContext.Create(ctx, mission); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create mission"})
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, mission)
 }
 
 // List godoc
+//
 //	@Summary		List all missions
 //	@Description	Get all missions
 //	@Tags			missions
@@ -62,10 +73,16 @@ func (h *Handler) Create(ctx *gin.Context) {
 //	@Success		200	{array}	models.Mission
 //	@Router			/missions [get]
 func (h *Handler) List(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, h.missions)
+	missions, err := h.Service._missionContext.GetAll(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list missions"})
+		return
+	}
+	ctx.JSON(http.StatusOK, missions)
 }
 
 // GetByID godoc
+//
 //	@Summary		Get mission by ID
 //	@Description	Get mission details by ID
 //	@Tags			missions
@@ -76,16 +93,16 @@ func (h *Handler) List(ctx *gin.Context) {
 //	@Router			/missions/{id} [get]
 func (h *Handler) GetByID(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
-	for _, m := range h.missions {
-		if int(m.ID) == id {
-			ctx.JSON(http.StatusOK, m)
-			return
-		}
+	mission, err := h.Service._missionContext.GetByID(ctx, uint(id))
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+	ctx.JSON(http.StatusOK, mission)
 }
 
 // AssignCat godoc
+//
 //	@Summary		Assign cat to mission
 //	@Description	Assign a cat to complete the mission
 //	@Tags			missions
@@ -104,18 +121,15 @@ func (h *Handler) AssignCat(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-
-	for i := range h.missions {
-		if int(h.missions[i].ID) == id {
-			h.missions[i].CatID = &body.CatID
-			ctx.JSON(http.StatusOK, h.missions[i])
-			return
-		}
+	if err := h.Service._missionContext.AssignCat(ctx, uint(id), body.CatID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assign cat"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+	ctx.Status(http.StatusOK)
 }
 
 // MarkComplete godoc
+//
 //	@Summary		Mark mission as complete
 //	@Description	Mark mission as complete if all targets are completed
 //	@Tags			missions
@@ -126,25 +140,24 @@ func (h *Handler) AssignCat(ctx *gin.Context) {
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id}/complete [post]
 func (h *Handler) MarkComplete(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
-	for i := range h.missions {
-		m := &h.missions[i]
-		if int(m.ID) == id {
-			for _, t := range m.Targets {
-				if !t.Complete {
-					ctx.JSON(http.StatusBadRequest, gin.H{"error": "Not all targets are completed"})
-					return
-				}
-			}
-			m.Complete = true
-			ctx.JSON(http.StatusOK, m)
-			return
-		}
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
 	}
-	ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+
+	// Викликаємо сервісний метод
+	err = h.Service._missionContext.MarkComplete(ctx, uint(id))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Mission marked as complete"})
 }
 
 // Delete godoc
+//
 //	@Summary		Delete mission
 //	@Description	Delete mission if it has no assigned cat
 //	@Tags			missions
@@ -154,18 +167,22 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id} [delete]
-func (h *Handler) Delete(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	for i, m := range h.missions {
-		if int(m.ID) == id {
-			if m.CatID != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Mission has assigned cat"})
-				return
-			}
-			h.missions = append(h.missions[:i], h.missions[i+1:]...)
-			c.Status(http.StatusNoContent)
-			return
-		}
+func (h *Handler) Delete(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+
+	err = h.Service._missionContext.DeleteByID(ctx, uint(id))
+	if err != nil {
+		if err.Error() == "mission has assigned cat" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+		}
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

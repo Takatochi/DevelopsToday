@@ -1,6 +1,8 @@
 package gorm
 
 import (
+	"DevelopsToday/internal/models"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -25,4 +27,11 @@ func Connect(dsn string, opts ...GormOption) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+func AutoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(
+		&models.Cat{},
+		&models.Mission{},
+		&models.Target{},
+	)
 }

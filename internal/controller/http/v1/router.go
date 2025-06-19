@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service cat.Service, l logger.Interface) {
+func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service *cat.Service, l logger.Interface) {
 	handler := &V1{l: l, cat: &cat.Handler{
 		Service: service,
 	}}
@@ -23,8 +23,10 @@ func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service cat.Service, l logger
 		cats.DELETE("/:id", handler.cat.Delete)
 	}
 }
-func NewMissionsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
-	handler := &V1{l: l, mission: &mission.Handler{}}
+func NewMissionsRoutes(apiV1Group *gin.RouterGroup, service *mission.Service, l logger.Interface) {
+	handler := &V1{l: l, mission: &mission.Handler{
+		Service: service,
+	}}
 	missions := apiV1Group.Group("/missions")
 	{
 		missions.POST("", handler.mission.Create)
@@ -36,8 +38,10 @@ func NewMissionsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
 	}
 
 }
-func NewTargetsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
-	handler := &V1{l: l, target: &target.Handler{}}
+func NewTargetsRoutes(apiV1Group *gin.RouterGroup, service *target.Service, l logger.Interface) {
+	handler := &V1{l: l, target: &target.Handler{
+		Service: service,
+	}}
 	targets := apiV1Group.Group("/missions/:id/targets")
 	{
 		targets.POST("", handler.target.Add)

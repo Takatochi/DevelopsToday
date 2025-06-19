@@ -10,6 +10,7 @@ type Repository struct {
 	db                *gorm.DB
 	catRepository     *CatRepository
 	missionRepository *MissionRepository
+	targetRepository  *TargetRepository
 }
 
 func NewRepository(db *gorm.DB) *Repository {
@@ -39,5 +40,14 @@ func (r *Repository) Mission() repo.MissionRepository {
 
 	return r.missionRepository
 }
+func (r *Repository) Target() repo.TargetRepository {
+	if r.missionRepository != nil {
+		return r.targetRepository
+	}
 
-//... other
+	r.targetRepository = &TargetRepository{
+		store: r,
+	}
+
+	return r.targetRepository
+}

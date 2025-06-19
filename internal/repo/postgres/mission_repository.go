@@ -46,6 +46,6 @@ func (r *MissionRepository) FindAll(ctx context.Context) ([]models.Mission, erro
 	return missions, err
 }
 
-func (r *MissionRepository) Delete(ctx context.Context, id uint) error {
+func (r *MissionRepository) DeleteByID(ctx context.Context, id uint) error {
 	return r.store.db.WithContext(ctx).Delete(&models.Mission{}, id).Error
 }

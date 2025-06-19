@@ -2,14 +2,26 @@ package target
 
 import (
 	"DevelopsToday/internal/models"
+	"DevelopsToday/internal/services"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+type Service struct {
+	_targetContext services.TargetContext
+}
+
+func NewImplService(targetContext services.TargetContext) *Service {
+	return &Service{
+		_targetContext: targetContext,
+	}
+}
+
 type Handler struct {
 	missions []models.Mission
+	Service  *Service
 }
 
 // UpdateNotesRequest represents request body for updating target notes
@@ -20,6 +32,7 @@ type UpdateNotesRequest struct {
 var targetIDCounter uint = 1
 
 // Add godoc
+//
 //	@Summary		Add target to mission
 //	@Description	Add a new target to an existing mission
 //	@Tags			targets
@@ -56,6 +69,7 @@ func (h *Handler) Add(ctx *gin.Context) {
 }
 
 // UpdateNotes godoc
+//
 //	@Summary		Update target notes
 //	@Description	Update notes for a specific target
 //	@Tags			targets
@@ -101,6 +115,7 @@ func (h *Handler) UpdateNotes(ctx *gin.Context) {
 }
 
 // MarkComplete godoc
+//
 //	@Summary		Mark target as complete
 //	@Description	Mark a specific target as completed
 //	@Tags			targets
@@ -128,6 +143,7 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 }
 
 // Delete godoc
+//
 //	@Summary		Delete target
 //	@Description	Delete a target from mission
 //	@Tags			targets
