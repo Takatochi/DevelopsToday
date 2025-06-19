@@ -1,5 +1,7 @@
 package models
 
+// Cat represents a cat entity
+// @Description Cat entity
 type Cat struct {
 	ID         uint    `json:"id"`
 	Name       string  `json:"name"`
