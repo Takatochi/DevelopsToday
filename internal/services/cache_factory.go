@@ -77,6 +77,6 @@ func (f *CacheFactory) createMemcachedCache(cfg *config.Config) (CacheService, e
 }
 
 // createMemoryCache creates an in-memory cache service
-func (f *CacheFactory) createMemoryCache(cfg *config.Config) (CacheService, error) {
+func (f *CacheFactory) createMemoryCache(_ *config.Config) (CacheService, error) {
 	return NewMemoryCacheService(), nil
 }

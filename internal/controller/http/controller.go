@@ -30,7 +30,13 @@ import (
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
-func NewV1Controller(engine *gin.Engine, store repo.Store, cfg *config.Config, l logger.Interface, jwtService *services.JWTService) {
+func NewV1Controller(
+	engine *gin.Engine,
+	store repo.Store,
+	cfg *config.Config,
+	l logger.Interface,
+	jwtService *services.JWTService,
+) {
 	// Middleware
 	engine.Use(middleware.LoggerMiddleware(l))
 	engine.Use(middleware.RecoveryMiddleware(l))

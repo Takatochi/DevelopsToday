@@ -19,6 +19,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testAdminUsername = "admin"
+	testAdminPassword = "admin123"
+)
+
 func setupTestApp(t *testing.T) (*gin.Engine, func()) {
 	// Set Gin to test mode
 	gin.SetMode(gin.TestMode)
@@ -69,8 +74,8 @@ func TestAuthIntegration(t *testing.T) {
 
 	t.Run("Login with valid credentials should return tokens", func(t *testing.T) {
 		loginData := map[string]string{
-			"username": "admin",
-			"password": "admin123",
+			"username": testAdminUsername,
+			"password": testAdminPassword,
 		}
 
 		body, _ := json.Marshal(loginData)
@@ -93,7 +98,7 @@ func TestAuthIntegration(t *testing.T) {
 
 	t.Run("Login with invalid credentials should return error", func(t *testing.T) {
 		loginData := map[string]string{
-			"username": "admin",
+			"username": testAdminUsername,
 			"password": "wrongpassword",
 		}
 
@@ -237,8 +242,8 @@ func TestHealthCheck(t *testing.T) {
 // Helper function to get auth token for tests
 func getAuthToken(t *testing.T, router *gin.Engine) string {
 	loginData := map[string]string{
-		"username": "admin",
-		"password": "admin123",
+		"username": testAdminUsername,
+		"password": testAdminPassword,
 	}
 
 	body, _ := json.Marshal(loginData)

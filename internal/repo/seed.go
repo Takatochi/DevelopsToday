@@ -6,13 +6,18 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	defaultAdminUsername = "admin"
+	defaultAdminPassword = "admin123"
+)
+
 func Seed(db *gorm.DB) error {
 	// Створюємо користувачів (тільки якщо їх ще немає)
 	var userCount int64
 	db.Model(&models.User{}).Count(&userCount)
 	if userCount == 0 {
 		users := []models.User{
-			{Username: "admin", Email: "admin@spycats.com", Password: "admin123", Role: "admin"},
+			{Username: defaultAdminUsername, Email: "admin@spycats.com", Password: defaultAdminPassword, Role: "admin"},
 			{Username: "agent", Email: "agent@spycats.com", Password: "agent123", Role: "user"},
 			{Username: "manager", Email: "manager@spycats.com", Password: "manager123", Role: "manager"},
 		}

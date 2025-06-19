@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testUsername = "testuser"
+	testRole     = "admin"
+)
+
 func TestJWTService(t *testing.T) {
 	// Create test configuration
 	cfg := &config.Config{
@@ -28,8 +33,6 @@ func TestJWTService(t *testing.T) {
 	jwtService := NewJWTService(cfg, cache)
 
 	testUserID := uint(1)
-	testUsername := "testuser"
-	testRole := "admin"
 
 	t.Run("GenerateTokenPair should create valid tokens", func(t *testing.T) {
 		tokens, err := jwtService.GenerateTokenPair(testUserID, testUsername, testRole)
@@ -150,8 +153,6 @@ func TestJWTClaims(t *testing.T) {
 		jwtService := NewJWTService(cfg, cache)
 
 		testUserID := uint(1)
-		testUsername := "testuser"
-		testRole := "admin"
 
 		tokens, err := jwtService.GenerateTokenPair(testUserID, testUsername, testRole)
 		require.NoError(t, err)
@@ -178,8 +179,6 @@ func TestJWTClaims(t *testing.T) {
 		jwtService := NewJWTService(cfg, cache)
 
 		testUserID := uint(1)
-		testUsername := "testuser"
-		testRole := "admin"
 
 		beforeGeneration := time.Now()
 		tokens, err := jwtService.GenerateTokenPair(testUserID, testUsername, testRole)
@@ -204,6 +203,8 @@ func TestJWTClaims(t *testing.T) {
 			timeDiff = -timeDiff
 		}
 		// Just check that the expiry time is reasonable (within 10 seconds of expected)
-		assert.True(t, timeDiff < time.Second*10, "ExpiresAt should be close to expected time, got diff: %v, expected: %v, actual: %v", timeDiff, expectedExpiry, claims.ExpiresAt.Time)
+		assert.True(t, timeDiff < time.Second*10,
+			"ExpiresAt should be close to expected time, got diff: %v, expected: %v, actual: %v",
+			timeDiff, expectedExpiry, claims.ExpiresAt.Time)
 	})
 }

@@ -179,13 +179,13 @@ func (m *MemoryCacheService) Ping(ctx context.Context) error {
 func (m *MemoryCacheService) Close() error {
 	m.ticker.Stop()
 	close(m.done)
-	
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	
+
 	// Clear all data
 	m.data = make(map[string]*MemoryCacheItem)
-	
+
 	return nil
 }
 
