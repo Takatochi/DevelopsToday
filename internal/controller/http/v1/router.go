@@ -18,26 +18,26 @@ func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
 	}
 }
 func NewMissionsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
-
+	handler := &V1{l: l}
 	missions := apiV1Group.Group("/missions")
 	{
-		missions.POST("/add", missionHandler.Create)
-		missions.GET("", missionHandler.List)
-		missions.GET("/:id", missionHandler.GetByID)
-		missions.PUT("/:id/complete", missionHandler.MarkComplete)
-		missions.PUT("/:id/assign", missionHandler.AssignCat)
-		missions.DELETE("/:id", missionHandler.Delete)
+		missions.POST("/add", handler.mission.Create)
+		missions.GET("", handler.mission.List)
+		missions.GET("/:id", handler.mission.GetByID)
+		missions.PUT("/:id/complete", handler.mission.MarkComplete)
+		missions.PUT("/:id/assign", handler.mission.AssignCat)
+		missions.DELETE("/:id", handler.mission.Delete)
 	}
 
 }
 func NewTargetsRoutes(apiV1Group *gin.RouterGroup, l logger.Interface) {
-
+	handler := &V1{l: l}
 	targets := apiV1Group.Group("/missions/:id/targets")
 	{
-		targets.POST("/add", targetHandler.Add)
-		targets.DELETE("/:tid", targetHandler.Delete)
-		targets.PUT("/:tid", targetHandler.UpdateNotes)
-		targets.PUT("/:tid/complete", targetHandler.MarkComplete)
+		targets.POST("/add", handler.target.Add)
+		targets.DELETE("/:tid", handler.target.Delete)
+		targets.PUT("/:tid", handler.target.UpdateNotes)
+		targets.PUT("/:tid/complete", handler.target.MarkComplete)
 	}
 
 }
