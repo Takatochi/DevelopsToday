@@ -1,15 +1,19 @@
 package cat
 
 import (
-	"DevelopsToday/internal/controller/http/middleware"
-	"DevelopsToday/pkg/logger"
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+
+	mdware "DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/services"
+	"DevelopsToday/pkg/logger"
+)
 
-	"github.com/gin-gonic/gin"
+const (
+	_recordNotFound = "record not found"
 )
 
 type Service struct {
@@ -53,18 +57,18 @@ func (h *Handler) Create(ctx *gin.Context) {
 	var newCat models.Cat
 
 	if err := ctx.ShouldBindJSON(&newCat); err != nil {
-		_ = ctx.Error(middleware.ErrBadRequest)
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	if !h.service._validator.IsValid(newCat.Breed) {
-		_ = ctx.Error(middleware.ErrInvalidBreed)
+		_ = ctx.Error(mdware.ErrInvalidBreed)
 		return
 	}
 
 	if err := h.service._catContext.Create(ctx, &newCat); err != nil {
 		h.logger.Error("Failed to create cat: %v", err)
-		_ = ctx.Error(middleware.ErrInternalError)
+		_ = ctx.Error(mdware.ErrInternalError)
 		return
 	}
 
@@ -84,7 +88,7 @@ func (h *Handler) Create(ctx *gin.Context) {
 func (h *Handler) List(ctx *gin.Context) {
 	cats, err := h.service._catContext.GetAll(ctx)
 	if err != nil {
-		_ = ctx.Error(middleware.ErrInternalError)
+		_ = ctx.Error(mdware.ErrInternalError)
 		h.logger.Error("Failed to list cats: %v", err)
 		return
 	}
@@ -108,16 +112,16 @@ func (h *Handler) List(ctx *gin.Context) {
 func (h *Handler) GetByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		_ = ctx.Error(middleware.ErrBadRequest)
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	cat, err := h.service._catContext.GetByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == "record not found" {
-			_ = ctx.Error(middleware.ErrCatNotFound)
+		if err.Error() == _recordNotFound {
+			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
-			_ = ctx.Error(middleware.ErrInternalError)
+			_ = ctx.Error(mdware.ErrInternalError)
 		}
 		return
 	}
@@ -143,7 +147,7 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 func (h *Handler) UpdateSalary(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		_ = ctx.Error(middleware.ErrBadRequest)
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
@@ -151,15 +155,15 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 		Salary float64 `json:"salary"`
 	}
 	if bindErr := ctx.ShouldBindJSON(&body); bindErr != nil {
-		_ = ctx.Error(middleware.ErrBadRequest)
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	if updateErr := h.service._catContext.UpdateSalary(ctx, uint(id), body.Salary); updateErr != nil {
-		if updateErr.Error() == "record not found" {
-			_ = ctx.Error(middleware.ErrCatNotFound)
+		if updateErr.Error() == _recordNotFound {
+			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
-			_ = ctx.Error(middleware.ErrInternalError)
+			_ = ctx.Error(mdware.ErrInternalError)
 		}
 		h.logger.Error("Failed to update cat salary: %v", updateErr)
 		return
@@ -167,10 +171,10 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 
 	cat, err := h.service._catContext.GetByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == "record not found" {
-			_ = ctx.Error(middleware.ErrCatNotFound)
+		if err.Error() == _recordNotFound {
+			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
-			_ = ctx.Error(middleware.ErrInternalError)
+			_ = ctx.Error(mdware.ErrInternalError)
 		}
 		h.logger.Error("Failed to fetch cat after salary update: %v", err)
 		return
@@ -194,16 +198,16 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 func (h *Handler) Delete(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		_ = ctx.Error(middleware.ErrBadRequest)
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	err = h.service._catContext.DeleteByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == "record not found" {
-			_ = ctx.Error(middleware.ErrCatNotFound)
+		if err.Error() == _recordNotFound {
+			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
-			_ = ctx.Error(middleware.ErrInternalError)
+			_ = ctx.Error(mdware.ErrInternalError)
 		}
 		h.logger.Error("Failed to delete cat: %v", err)
 		return
