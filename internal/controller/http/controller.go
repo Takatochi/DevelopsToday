@@ -40,6 +40,7 @@ func NewV1Controller(
 	// Middleware
 	engine.Use(middleware.LoggerMiddleware(l))
 	engine.Use(middleware.RecoveryMiddleware(l))
+	engine.Use(middleware.GlobalErrorHandler())
 
 	// Health check endpoint
 	engine.GET("/health", func(c *gin.Context) {
