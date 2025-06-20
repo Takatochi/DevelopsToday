@@ -40,6 +40,16 @@ func NewV1Controller(
 	// Middleware
 	engine.Use(middleware.LoggerMiddleware(l))
 	engine.Use(middleware.RecoveryMiddleware(l))
+	engine.Use(func() gin.HandlerFunc {
+		return func(c *gin.Context) {
+			c.Next()
+			if len(c.Errors) > 0 {
+				err := c.Errors.Last()
+				c.JSON(500, gin.H{"error": err.Error()})
+				c.Abort()
+			}
+		}
+	}())
 
 	// Health check endpoint
 	engine.GET("/health", func(c *gin.Context) {

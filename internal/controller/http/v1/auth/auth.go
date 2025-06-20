@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -13,6 +14,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+)
+
+var (
+	ErrUnauthorized = errors.New("unauthorized")
+	ErrConflict     = errors.New("conflict")
+	ErrBadRequest   = errors.New("bad request")
 )
 
 type Handler struct {
@@ -44,7 +51,7 @@ func NewHandler(userRepo repo.UserRepository, jwtService *services.JWTService, l
 func (h *Handler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -52,12 +59,12 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Check if user already exists
 	if _, err := h.userRepo.FindByUsername(ctx, req.Username); err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		c.Error(ErrConflict)
 		return
 	}
 
 	if _, err := h.userRepo.FindByEmail(ctx, req.Email); err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		c.Error(ErrConflict)
 		return
 	}
 
@@ -76,7 +83,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	if err := h.userRepo.Create(ctx, user); err != nil {
 		h.logger.Error("Failed to create user: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		c.Error(err)
 		return
 	}
 
@@ -84,7 +91,7 @@ func (h *Handler) Register(c *gin.Context) {
 	tokens, err := h.jwtService.GenerateTokenPair(user.ID, user.Username, user.Role)
 	if err != nil {
 		h.logger.Error("Failed to generate tokens: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		c.Error(err)
 		return
 	}
 
@@ -119,7 +126,7 @@ func (h *Handler) Register(c *gin.Context) {
 func (h *Handler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -129,17 +136,17 @@ func (h *Handler) Login(c *gin.Context) {
 	user, err := h.userRepo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			c.Error(ErrUnauthorized)
 			return
 		}
 		h.logger.Error("Failed to find user: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.Error(err)
 		return
 	}
 
 	// Check password
 	if !user.CheckPassword(req.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.Error(ErrUnauthorized)
 		return
 	}
 
