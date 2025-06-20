@@ -22,9 +22,9 @@ func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service *cat.Service, l logge
 	cats.DELETE("/:id", handler.cat.Delete)
 }
 func NewMissionsRoutes(apiV1Group *gin.RouterGroup, service *mission.Service, l logger.Interface) {
-	handler := &V1{mission: &mission.Handler{
-		Service: service,
-	}}
+	handler := &V1{
+		mission: mission.NewHandler(service, l),
+	}
 	missions := apiV1Group.Group("/missions")
 	missions.POST("", handler.mission.Create)
 	missions.GET("", handler.mission.List)
