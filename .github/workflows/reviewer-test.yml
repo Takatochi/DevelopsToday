@@ -28,6 +28,13 @@ jobs:
         sudo apt-get update && sudo apt-get install -y make openssl curl
         go install github.com/swaggo/swag/cmd/swag@latest
 
+    - name: Debug environment
+      run: |
+        pwd
+        ls -la
+        go version
+        which swag
+
     - name: Test Swagger generation
       run: |
         swag init -g internal/controller/http/controller.go -o docs
@@ -73,6 +80,13 @@ jobs:
         sudo apt-get install -y make openssl
         go install github.com/swaggo/swag/cmd/swag@latest
 
+    - name: Debug environment
+      run: |
+        pwd
+        ls -la
+        go version
+        which swag
+
     - name: Test build commands
       run: |
         make deps
@@ -91,6 +105,17 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Debug environment
+      run: |
+        pwd
+        ls -la
+        go version
 
     - name: Test Swagger generation
       run: |
