@@ -1,0 +1,138 @@
+name: Reviewer Test Suite
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  reviewer-setup-test:
+    name: Test Reviewer Setup Commands
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y make openssl curl
+        go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Debug environment
+      run: |
+        pwd
+        ls -la
+        go version
+        which swag
+
+    - name: Test Swagger generation
+      run: |
+        swag init -g internal/controller/http/controller.go -o docs
+        ls -la docs/
+
+    - name: Test SSL certificate generation
+      run: |
+        make ssl-generate
+        ls -la ssl/
+
+    - name: Test Docker Compose validation
+      run: |
+        docker compose -f docker-compose.yml config
+
+    - name: Test basic Docker build
+      run: |
+        swag init -g internal/controller/http/controller.go -o docs
+        docker build -t spy-cats-test .
+
+    - name: Test unit tests
+      run: |
+        swag init -g internal/controller/http/controller.go -o docs
+        go test -v ./internal/services/
+        go test -v ./internal/controller/http/v1/cat/
+        go test -v ./internal/controller/http/v1/mission/
+        go test -v ./internal/controller/http/v1/target/
+
+  makefile-commands-test:
+    name: Test All Makefile Commands
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y make openssl
+        go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Debug environment
+      run: |
+        pwd
+        ls -la
+        go version
+        which swag
+
+    - name: Test build commands
+      run: |
+        make deps
+        make swagger
+        make build
+
+    - name: Test help command
+      run: make help
+
+    - name: Test troubleshoot command
+      run: make troubleshoot
+
+  documentation-test:
+    name: Test Documentation and Examples
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Debug environment
+      run: |
+        pwd
+        ls -la
+        go version
+
+    - name: Test Swagger generation
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@latest
+        swag init -g internal/controller/http/controller.go -o docs
+        ls -la docs/
+
+    - name: Validate Docker Compose files
+      run: |
+        docker compose -f docker-compose.yml config
+
+    - name: Test SSL setup (manual)
+      run: |
+        mkdir -p ssl
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout ssl/nginx.key -out ssl/nginx.crt \
+          -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+        ls -la ssl/
+
+

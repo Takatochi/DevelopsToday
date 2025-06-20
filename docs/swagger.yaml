@@ -1,0 +1,918 @@
+basePath: /v1
+definitions:
+  dto.AuthResponse:
+    description: Authentication response with user data and tokens
+    properties:
+      access_token:
+        description: |-
+          JWT access token for API authentication
+          @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        description: |-
+          JWT refresh token for obtaining new access tokens
+          @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/dto.UserResponse'
+        description: User information
+    type: object
+  dto.LoginRequest:
+    description: User login request
+    properties:
+      password:
+        description: |-
+          Password for authentication
+          @example "securepassword123"
+        example: securepassword123
+        type: string
+      username:
+        description: |-
+          Username or email for authentication
+          @example "john_doe"
+        example: john_doe
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.RefreshRequest:
+    description: Refresh token request
+    properties:
+      refresh_token:
+        description: |-
+          Refresh token to obtain new access token
+          @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RegisterRequest:
+    description: User registration request
+    properties:
+      email:
+        description: |-
+          Email address for the new user account
+          @example "john.doe@example.com"
+        example: john.doe@example.com
+        type: string
+      password:
+        description: |-
+          Password for the new user account (minimum 6 characters)
+          @example "securepassword123"
+        example: securepassword123
+        minLength: 6
+        type: string
+      role:
+        description: |-
+          Role for the user (optional, defaults to "spy")
+          @example "spy"
+        example: spy
+        type: string
+      username:
+        description: |-
+          Username for the new user account
+          @example "john_doe"
+        example: john_doe
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  dto.UserResponse:
+    description: User information in API responses
+    properties:
+      created_at:
+        description: |-
+          Account creation timestamp
+          @example "2023-12-01T10:00:00Z"
+        example: "2023-12-01T10:00:00Z"
+        type: string
+      email:
+        description: |-
+          Email address of the user
+          @example "john.doe@example.com"
+        example: john.doe@example.com
+        type: string
+      id:
+        description: |-
+          Unique user identifier
+          @example 1
+        example: 1
+        type: integer
+      role:
+        description: |-
+          Role of the user
+          @example "spy"
+        example: spy
+        type: string
+      updated_at:
+        description: |-
+          Last update timestamp
+          @example "2023-12-01T10:00:00Z"
+        example: "2023-12-01T10:00:00Z"
+        type: string
+      username:
+        description: |-
+          Username of the user
+          @example "john_doe"
+        example: john_doe
+        type: string
+    type: object
+  mission.AssignCatRequest:
+    properties:
+      cat_id:
+        type: integer
+    type: object
+  mission.CreateRequest:
+    properties:
+      targets:
+        items:
+          $ref: '#/definitions/models.Target'
+        type: array
+    type: object
+  models.Cat:
+    description: Cat entity
+    properties:
+      breed:
+        type: string
+      experience:
+        type: integer
+      id:
+        example: 1
+        type: integer
+      name:
+        type: string
+      salary:
+        type: number
+    type: object
+  models.Mission:
+    description: Mission entity with assigned targets and cat
+    properties:
+      cat_id:
+        type: integer
+      complete:
+        type: boolean
+      id:
+        type: integer
+      targets:
+        items:
+          $ref: '#/definitions/models.Target'
+        type: array
+    type: object
+  models.Target:
+    description: Target entity that needs to be completed
+    properties:
+      complete:
+        type: boolean
+      country:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      notes:
+        type: string
+    type: object
+  services.TokenPair:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  target.UpdateNotesRequest:
+    properties:
+      notes:
+        example: Target usually visits gym at 6 PM
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for managing spy cats, missions, and targets with JWT authentication
+  title: Spy Cat Agency API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with username and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke user's refresh token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Get current authenticated user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with username, email and password
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - auth
+  /cats:
+    get:
+      description: Get list of all cats
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Cat'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all cats
+      tags:
+      - cats
+    post:
+      consumes:
+      - application/json
+      description: Create a new cat in the system
+      parameters:
+      - description: Cat info
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/models.Cat'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Cat'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new cat
+      tags:
+      - cats
+  /cats/{id}:
+    delete:
+      description: Delete cat by ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete cat
+      tags:
+      - cats
+    get:
+      description: Get cat details by ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cat'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get cat by ID
+      tags:
+      - cats
+  /cats/{id}/salary:
+    patch:
+      consumes:
+      - application/json
+      description: Update salary for a specific cat
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New salary
+        in: body
+        name: salary
+        required: true
+        schema:
+          type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cat'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update cat salary
+      tags:
+      - cats
+  /missions:
+    get:
+      description: Get all missions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Mission'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all missions
+      tags:
+      - missions
+    post:
+      consumes:
+      - application/json
+      description: Create a new mission with 1-3 targets
+      parameters:
+      - description: Mission targets
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/mission.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Mission'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new mission
+      tags:
+      - missions
+  /missions/{id}:
+    delete:
+      description: Delete mission if it has no assigned cat
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete mission
+      tags:
+      - missions
+    get:
+      description: Get mission details by ID
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Mission'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get mission by ID
+      tags:
+      - missions
+  /missions/{id}/assign:
+    post:
+      consumes:
+      - application/json
+      description: Assign a cat to complete the mission
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Cat info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/mission.AssignCatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Mission'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Assign cat to mission
+      tags:
+      - missions
+  /missions/{id}/complete:
+    post:
+      description: Mark mission as complete if all targets are completed
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Mission'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark mission as complete
+      tags:
+      - missions
+  /missions/{id}/targets:
+    post:
+      consumes:
+      - application/json
+      description: Add a new target to an existing mission
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Target info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.Target'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Target'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add target to mission
+      tags:
+      - targets
+  /missions/{id}/targets/{tid}:
+    delete:
+      description: Delete a target from mission
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Target ID
+        in: path
+        name: tid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete target
+      tags:
+      - targets
+  /missions/{id}/targets/{tid}/complete:
+    post:
+      description: Mark a specific target as completed
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Target ID
+        in: path
+        name: tid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Target'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark target as complete
+      tags:
+      - targets
+  /missions/{id}/targets/{tid}/notes:
+    patch:
+      consumes:
+      - application/json
+      description: Update notes for a specific target
+      parameters:
+      - description: Mission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Target ID
+        in: path
+        name: tid
+        required: true
+        type: integer
+      - description: Target notes
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/target.UpdateNotesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Target'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update target notes
+      tags:
+      - targets
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,78 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spy-cats-api-lite
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_NAME=${APP_NAME:-spy-cats-api}
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - HTTP_PORT=${HTTP_PORT:-8080}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - PG_URL=postgres://${POSTGRES_USER:-spy_cats}:${POSTGRES_PASSWORD:-spy_cats_password}@postgres:5432/${POSTGRES_DB:-spy_cats}?sslmode=disable
+      - PG_POOL_MAX=${PG_POOL_MAX:-10}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_ACCESS_TOKEN_TTL=${JWT_ACCESS_TOKEN_TTL:-15m}
+      - JWT_REFRESH_TOKEN_TTL=${JWT_REFRESH_TOKEN_TTL:-7d}
+      - JWT_SIGNING_ALGORITHM=${JWT_SIGNING_ALGORITHM:-HS256}
+      - SWAGGER_ENABLED=${SWAGGER_ENABLED:-true}
+      - CACHE_TYPE=${CACHE_TYPE:-redis}
+      - REDIS_URL=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - spy-cats-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: spy-cats-db-lite
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-spy_cats}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spy_cats_password}
+      POSTGRES_DB: ${POSTGRES_DB:-spy_cats}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spy_cats -d spy_cats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - spy-cats-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: spy-cats-redis-lite
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - spy-cats-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  spy-cats-network:
+    driver: bridge
