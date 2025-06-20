@@ -3,9 +3,9 @@ package models
 // Cat represents a cat entity
 // @Description Cat entity
 type Cat struct {
-	Name       string  `json:"name"`
-	Breed      string  `json:"breed"`
 	ID         uint    `gorm:"primaryKey" json:"id" example:"1"`
-	Experience int     `json:"experience"`
-	Salary     float64 `json:"salary"`
+	Name       string  `json:"name" validate:"required,min=1,max=100" example:"Whiskers"`
+	Breed      string  `json:"breed" validate:"required,min=1,max=50" example:"Bengal"`
+	Experience int     `json:"experience" validate:"min=0,max=50" example:"5"`
+	Salary     float64 `json:"salary" validate:"min=0" example:"1000.50"`
 }

@@ -1,19 +1,18 @@
 package cat
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	mdware "DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/services"
 	"DevelopsToday/pkg/logger"
-)
-
-const (
-	_recordNotFound = "record not found"
 )
 
 type Service struct {
@@ -29,14 +28,16 @@ func NewImplService(validator services.Validator, catCtx services.CatContext) *S
 }
 
 type Handler struct {
-	service *Service
-	logger  logger.Interface
+	service   *Service
+	logger    logger.Interface
+	validator *validator.Validate
 }
 
 func NewHandler(service *Service, logger logger.Interface) *Handler {
 	return &Handler{
-		service: service,
-		logger:  logger,
+		service:   service,
+		logger:    logger,
+		validator: validator.New(),
 	}
 }
 
@@ -57,6 +58,12 @@ func (h *Handler) Create(ctx *gin.Context) {
 	var newCat models.Cat
 
 	if err := ctx.ShouldBindJSON(&newCat); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
+	// Validate struct fields
+	if err := h.validator.Struct(&newCat); err != nil {
 		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
@@ -118,7 +125,7 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 
 	cat, err := h.service._catContext.GetByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == _recordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
 			_ = ctx.Error(mdware.ErrInternalError)
@@ -152,15 +159,21 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 	}
 
 	var body struct {
-		Salary float64 `json:"salary"`
+		Salary float64 `json:"salary" validate:"min=0"`
 	}
 	if bindErr := ctx.ShouldBindJSON(&body); bindErr != nil {
 		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
+	// Validate salary
+	if err = h.validator.Struct(&body); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
 	if updateErr := h.service._catContext.UpdateSalary(ctx, uint(id), body.Salary); updateErr != nil {
-		if updateErr.Error() == _recordNotFound {
+		if errors.Is(updateErr, gorm.ErrRecordNotFound) {
 			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
 			_ = ctx.Error(mdware.ErrInternalError)
@@ -171,7 +184,7 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 
 	cat, err := h.service._catContext.GetByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == _recordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
 			_ = ctx.Error(mdware.ErrInternalError)
@@ -204,7 +217,7 @@ func (h *Handler) Delete(ctx *gin.Context) {
 
 	err = h.service._catContext.DeleteByID(ctx, uint(id))
 	if err != nil {
-		if err.Error() == _recordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = ctx.Error(mdware.ErrCatNotFound)
 		} else {
 			_ = ctx.Error(mdware.ErrInternalError)
