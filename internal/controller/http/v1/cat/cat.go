@@ -1,6 +1,8 @@
 package cat
 
 import (
+	"DevelopsToday/internal/controller/http/middleware"
+	"DevelopsToday/pkg/logger"
 	"net/http"
 	"strconv"
 
@@ -23,7 +25,15 @@ func NewImplService(validator services.Validator, catCtx services.CatContext) *S
 }
 
 type Handler struct {
-	Service *Service
+	service *Service
+	logger  logger.Interface
+}
+
+func NewHandler(service *Service, logger logger.Interface) *Handler {
+	return &Handler{
+		service: service,
+		logger:  logger,
+	}
 }
 
 // Create godoc
@@ -41,18 +51,20 @@ type Handler struct {
 //	@Router			/cats [post]
 func (h *Handler) Create(ctx *gin.Context) {
 	var newCat models.Cat
+
 	if err := ctx.ShouldBindJSON(&newCat); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		_ = ctx.Error(middleware.ErrBadRequest)
 		return
 	}
 
-	if !h.Service._validator.IsValid(newCat.Breed) {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid breed"})
+	if !h.service._validator.IsValid(newCat.Breed) {
+		_ = ctx.Error(middleware.ErrInvalidBreed)
 		return
 	}
 
-	if err := h.Service._catContext.Create(ctx, &newCat); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create cat"})
+	if err := h.service._catContext.Create(ctx, &newCat); err != nil {
+		h.logger.Error("Failed to create cat: %v", err)
+		_ = ctx.Error(middleware.ErrInternalError)
 		return
 	}
 
@@ -70,9 +82,10 @@ func (h *Handler) Create(ctx *gin.Context) {
 //	@Failure		401	{object}	map[string]interface{}
 //	@Router			/cats [get]
 func (h *Handler) List(ctx *gin.Context) {
-	cats, err := h.Service._catContext.GetAll(ctx)
+	cats, err := h.service._catContext.GetAll(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cats"})
+		_ = ctx.Error(middleware.ErrInternalError)
+		h.logger.Error("Failed to list cats: %v", err)
 		return
 	}
 	ctx.JSON(http.StatusOK, cats)
@@ -95,13 +108,17 @@ func (h *Handler) List(ctx *gin.Context) {
 func (h *Handler) GetByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		_ = ctx.Error(middleware.ErrBadRequest)
 		return
 	}
 
-	cat, err := h.Service._catContext.GetByID(ctx, uint(id))
+	cat, err := h.service._catContext.GetByID(ctx, uint(id))
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+		if err.Error() == "record not found" {
+			_ = ctx.Error(middleware.ErrCatNotFound)
+		} else {
+			_ = ctx.Error(middleware.ErrInternalError)
+		}
 		return
 	}
 
@@ -126,7 +143,7 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 func (h *Handler) UpdateSalary(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		_ = ctx.Error(middleware.ErrBadRequest)
 		return
 	}
 
@@ -134,18 +151,28 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 		Salary float64 `json:"salary"`
 	}
 	if bindErr := ctx.ShouldBindJSON(&body); bindErr != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		_ = ctx.Error(middleware.ErrBadRequest)
 		return
 	}
 
-	if updateErr := h.Service._catContext.UpdateSalary(ctx, uint(id), body.Salary); updateErr != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+	if updateErr := h.service._catContext.UpdateSalary(ctx, uint(id), body.Salary); updateErr != nil {
+		if updateErr.Error() == "record not found" {
+			_ = ctx.Error(middleware.ErrCatNotFound)
+		} else {
+			_ = ctx.Error(middleware.ErrInternalError)
+		}
+		h.logger.Error("Failed to update cat salary: %v", updateErr)
 		return
 	}
 
-	cat, err := h.Service._catContext.GetByID(ctx, uint(id))
+	cat, err := h.service._catContext.GetByID(ctx, uint(id))
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Salary updated, but cat fetch failed"})
+		if err.Error() == "record not found" {
+			_ = ctx.Error(middleware.ErrCatNotFound)
+		} else {
+			_ = ctx.Error(middleware.ErrInternalError)
+		}
+		h.logger.Error("Failed to fetch cat after salary update: %v", err)
 		return
 	}
 
@@ -167,13 +194,18 @@ func (h *Handler) UpdateSalary(ctx *gin.Context) {
 func (h *Handler) Delete(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		_ = ctx.Error(middleware.ErrBadRequest)
 		return
 	}
 
-	err = h.Service._catContext.DeleteByID(ctx, uint(id))
+	err = h.service._catContext.DeleteByID(ctx, uint(id))
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Cat not found"})
+		if err.Error() == "record not found" {
+			_ = ctx.Error(middleware.ErrCatNotFound)
+		} else {
+			_ = ctx.Error(middleware.ErrInternalError)
+		}
+		h.logger.Error("Failed to delete cat: %v", err)
 		return
 	}
 

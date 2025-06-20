@@ -10,9 +10,9 @@ import (
 )
 
 func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service *cat.Service, l logger.Interface) {
-	handler := &V1{cat: &cat.Handler{
-		Service: service,
-	}}
+	handler := &V1{
+		cat: cat.NewHandler(service, l),
+	}
 
 	cats := apiV1Group.Group("/cats")
 	cats.POST("", handler.cat.Create)

@@ -46,7 +46,7 @@ func setupTestRouter() (*gin.Engine, *Service) {
 	validator := NewMockValidator()
 
 	service := NewImplService(validator, catService)
-	handler := &Handler{Service: service}
+	handler := NewHandler(service, nil)
 
 	router := gin.New()
 	v1 := router.Group("/v1")
