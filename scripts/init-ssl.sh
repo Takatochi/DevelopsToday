@@ -16,16 +16,16 @@ mkdir -p "$SSL_DIR"
 
 # Check if certificates already exist
 if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
-    echo "✅ SSL certificates already exist"
+    echo "   SSL certificates already exist"
     echo "   Certificate: $CERT_FILE"
     echo "   Private Key: $KEY_FILE"
     
     # Verify certificate is valid
     if openssl x509 -in "$CERT_FILE" -noout -text >/dev/null 2>&1; then
-        echo "✅ Certificate is valid"
+        echo " Certificate is valid"
         exit 0
     else
-        echo "⚠️  Certificate is invalid, regenerating..."
+        echo "  Certificate is invalid, regenerating..."
         rm -f "$CERT_FILE" "$KEY_FILE"
     fi
 fi
@@ -34,12 +34,12 @@ echo "🔧 Generating new SSL certificates..."
 
 # Install OpenSSL if not available
 if ! command -v openssl >/dev/null 2>&1; then
-    echo "📦 Installing OpenSSL..."
+    echo " Installing OpenSSL..."
     apk add --no-cache openssl
 fi
 
 # Generate self-signed certificate
-echo "🔐 Creating self-signed certificate..."
+echo " Creating self-signed certificate..."
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout "$KEY_FILE" \
     -out "$CERT_FILE" \
@@ -52,15 +52,15 @@ chmod 600 "$KEY_FILE"
 
 # Verify generated certificate
 if openssl x509 -in "$CERT_FILE" -noout -text >/dev/null 2>&1; then
-    echo "✅ SSL certificates generated successfully!"
+    echo " SSL certificates generated successfully!"
     echo "   Certificate: $CERT_FILE"
     echo "   Private Key: $KEY_FILE"
     
     # Show certificate info
-    echo "📋 Certificate Information:"
+    echo " Certificate Information:"
     openssl x509 -in "$CERT_FILE" -noout -subject -dates
 else
-    echo "❌ Failed to generate valid SSL certificate"
+    echo " Failed to generate valid SSL certificate"
     exit 1
 fi
 
