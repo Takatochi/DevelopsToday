@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"DevelopsToday/internal/models"
@@ -60,7 +61,7 @@ func TestTargetService(t *testing.T) {
 		}
 
 		err := targetService.Add(ctx, 999, target)
-		if err != gorm.ErrRecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("Expected gorm.ErrRecordNotFound, got %v", err)
 		}
 	})
@@ -109,7 +110,7 @@ func TestTargetService(t *testing.T) {
 
 	t.Run("UpdateNotes should fail for non-existing mission", func(t *testing.T) {
 		err := targetService.UpdateNotes(ctx, 999, 1, "Test notes")
-		if err != gorm.ErrRecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			t.Fatalf("Expected gorm.ErrRecordNotFound, got %v", err)
 		}
 	})

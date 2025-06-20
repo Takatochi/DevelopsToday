@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Изменяем константу на переменную, чтобы можно было менять в тестах
+// breedAPIURL is the URL for the cat breed API.
 var breedAPIURL = "https://api.thecatapi.com/v1/breeds"
 
 type Breed struct {
@@ -58,7 +58,7 @@ func (s *serviceBreed) fetchBreeds() error {
 	defer resp.Body.Close()
 
 	var breeds []Breed
-	if err := json.NewDecoder(resp.Body).Decode(&breeds); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&breeds); err != nil {
 		return err
 	}
 
