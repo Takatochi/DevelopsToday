@@ -212,10 +212,20 @@ nginx-test: ## Test Nginx configuration
 ssl-generate: ## Generate self-signed SSL certificates
 	@echo "$(YELLOW)Generating self-signed SSL certificates...$(NC)"
 	mkdir -p ssl
-	openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-		-keyout ssl/nginx.key \
-		-out ssl/nginx.crt \
-		-subj "/C=UA/ST=Kyiv/L=Kyiv/O=DevelopsToday/CN=localhost"
+	@if command -v openssl >/dev/null 2>&1; then \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout ssl/nginx.key \
+			-out ssl/nginx.crt \
+			-subj "//C=UA\ST=Kyiv\L=Kyiv\O=DevelopsToday\CN=localhost" 2>/dev/null || \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout ssl/nginx.key \
+			-out ssl/nginx.crt \
+			-subj "/C=UA/ST=Kyiv/L=Kyiv/O=DevelopsToday/CN=localhost"; \
+	else \
+		echo "$(YELLOW)OpenSSL not found, creating dummy certificates...$(NC)"; \
+		echo "dummy cert" > ssl/nginx.crt; \
+		echo "dummy key" > ssl/nginx.key; \
+	fi
 	@echo "$(GREEN)SSL certificates generated in ssl/ directory$(NC)"
 
 .PHONY: health-check
