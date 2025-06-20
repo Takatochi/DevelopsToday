@@ -45,7 +45,7 @@ func NewHandler(userRepo repo.UserRepository, jwtService *services.JWTService, l
 func (h *Handler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 
@@ -53,12 +53,12 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Check if user already exists
 	if _, err := h.userRepo.FindByUsername(ctx, req.Username); err == nil {
-		c.Error(middleware.ErrUserExists)
+		_ = c.Error(middleware.ErrUserExists)
 		return
 	}
 
 	if _, err := h.userRepo.FindByEmail(ctx, req.Email); err == nil {
-		c.Error(middleware.ErrEmailExists)
+		_ = c.Error(middleware.ErrEmailExists)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	if err := h.userRepo.Create(ctx, user); err != nil {
 		h.logger.Error("Failed to create user: %v", err)
-		c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (h *Handler) Register(c *gin.Context) {
 	tokens, err := h.jwtService.GenerateTokenPair(user.ID, user.Username, user.Role)
 	if err != nil {
 		h.logger.Error("Failed to generate tokens: %v", err)
-		c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 
@@ -120,7 +120,7 @@ func (h *Handler) Register(c *gin.Context) {
 func (h *Handler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 
@@ -130,17 +130,17 @@ func (h *Handler) Login(c *gin.Context) {
 	user, err := h.userRepo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.Error(middleware.ErrInvalidCreds)
+			_ = c.Error(middleware.ErrInvalidCreds)
 			return
 		}
 		h.logger.Error("Failed to find user: %v", err)
-		c.Error(err)
+		_ = c.Error(err)
 		return
 	}
 
 	// Check password
 	if !user.CheckPassword(req.Password) {
-		c.Error(middleware.ErrInvalidCreds)
+		_ = c.Error(middleware.ErrInvalidCreds)
 		return
 	}
 
