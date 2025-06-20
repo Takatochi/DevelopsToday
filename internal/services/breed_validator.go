@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// Изменяем константу на переменную, чтобы можно было менять в тестах
 var breedAPIURL = "https://api.thecatapi.com/v1/breeds"
 
 type Breed struct {
