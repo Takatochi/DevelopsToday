@@ -512,6 +512,45 @@ quick-lite: ## Ultra-fast start (lite version - no SSL, no Nginx)
 	@echo ""
 	@echo "$(GREEN)No SSL setup needed - just HTTP!$(NC)"
 
+.PHONY: quick-ssl
+quick-ssl: ## Quick start with SSL (full version with Nginx and HTTPS)
+	@echo "$(BLUE)Quick start for Spy Cats API with SSL...$(NC)"
+	@echo "$(YELLOW)Step 1: Generating SSL certificates...$(NC)"
+	$(MAKE) ssl-generate
+	@echo "$(YELLOW)Step 2: Generating Swagger documentation...$(NC)"
+	$(MAKE) swagger
+	@echo "$(YELLOW)Step 3: Starting all services (API + DB + Redis + Nginx)...$(NC)"
+	$(MAKE) docker-compose-up-build
+	@echo "$(YELLOW)Step 4: Waiting for services...$(NC)"
+	@sleep 15
+	@echo "$(YELLOW)Step 5: Health check...$(NC)"
+	$(MAKE) health-check || echo "$(YELLOW)Health check failed - services may still be starting$(NC)"
+	@echo ""
+	@echo "$(GREEN)Quick SSL start completed!$(NC)"
+	@echo "$(BLUE)================================================$(NC)"
+	@echo "$(GREEN)Spy Cats API with SSL is ready!$(NC)"
+	@echo ""
+	@echo "$(BLUE)Available endpoints:$(NC)"
+	@echo "  Swagger Documentation: $(YELLOW)https://localhost/swagger/index.html$(NC)"
+	@echo "  Health Check:          $(YELLOW)https://localhost/health$(NC)"
+	@echo "  API Base URL:          $(YELLOW)https://localhost/v1$(NC)"
+	@echo "  Login Endpoint:        $(YELLOW)https://localhost/v1/auth/login$(NC)"
+	@echo ""
+	@echo "$(BLUE)HTTP endpoints also available:$(NC)"
+	@echo "  HTTP API:              $(YELLOW)http://localhost:8080$(NC)"
+	@echo "  HTTP Health:           $(YELLOW)http://localhost:8080/health$(NC)"
+	@echo ""
+	@echo "$(BLUE)Test credentials:$(NC)"
+	@echo "  Username: $(YELLOW)admin$(NC)"
+	@echo "  Password: $(YELLOW)admin123$(NC)"
+	@echo ""
+	@echo "$(BLUE)Quick commands:$(NC)"
+	@echo "  - Stop services:          $(YELLOW)make docker-compose-down$(NC)"
+	@echo "  - View logs:              $(YELLOW)make logs$(NC)"
+	@echo "  - Check status:           $(YELLOW)make status$(NC)"
+	@echo ""
+	@echo "$(GREEN)HTTPS ready with auto-generated certificates!$(NC)"
+
 .PHONY: dev-setup
 dev-setup: ## Setup development environment with hot reload
 	@echo "$(BLUE)Setting up development environment...$(NC)"
