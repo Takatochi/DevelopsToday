@@ -278,7 +278,4 @@ make ssl-fix               # Fix SSL certificate issues
 make status                # Check service status
 make logs-all              # View all service logs
 ```
-![img.png](img.png)
-![img_1.png](img_1.png)
-![img_2.png](img_2.png)
 
