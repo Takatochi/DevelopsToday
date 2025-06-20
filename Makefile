@@ -212,7 +212,10 @@ nginx-test: ## Test Nginx configuration
 ssl-generate: ## Generate self-signed SSL certificates
 	@echo "$(YELLOW)Generating self-signed SSL certificates...$(NC)"
 	mkdir -p ssl
-	@if command -v openssl >/dev/null 2>&1; then \
+	@if [ -f ssl/nginx.crt ] && [ -f ssl/nginx.key ]; then \
+		echo "$(GREEN)SSL certificates already exist$(NC)"; \
+	elif command -v openssl >/dev/null 2>&1; then \
+		echo "$(YELLOW)Using local OpenSSL...$(NC)"; \
 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 			-keyout ssl/nginx.key \
 			-out ssl/nginx.crt \
@@ -221,10 +224,26 @@ ssl-generate: ## Generate self-signed SSL certificates
 			-keyout ssl/nginx.key \
 			-out ssl/nginx.crt \
 			-subj "/C=UA/ST=Kyiv/L=Kyiv/O=DevelopsToday/CN=localhost"; \
+	elif command -v docker >/dev/null 2>&1; then \
+		echo "$(YELLOW)Using Docker to generate certificates...$(NC)"; \
+		docker run --rm -v "$(PWD)/ssl:/ssl" alpine:latest sh -c \
+			"apk add --no-cache openssl && \
+			openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+				-keyout /ssl/nginx.key \
+				-out /ssl/nginx.crt \
+				-subj '/C=UA/ST=Kyiv/L=Kyiv/O=DevelopsToday/CN=localhost' && \
+			chmod 644 /ssl/nginx.crt && \
+			chmod 600 /ssl/nginx.key"; \
 	else \
-		echo "$(YELLOW)OpenSSL not found, creating dummy certificates...$(NC)"; \
-		echo "dummy cert" > ssl/nginx.crt; \
-		echo "dummy key" > ssl/nginx.key; \
+		echo "$(RED)Neither OpenSSL nor Docker found. Cannot generate SSL certificates.$(NC)"; \
+		echo "$(YELLOW)Please install OpenSSL or Docker to generate proper certificates.$(NC)"; \
+		echo "$(YELLOW)Creating placeholder files...$(NC)"; \
+		echo "-----BEGIN CERTIFICATE-----" > ssl/nginx.crt; \
+		echo "PLACEHOLDER_CERTIFICATE" >> ssl/nginx.crt; \
+		echo "-----END CERTIFICATE-----" >> ssl/nginx.crt; \
+		echo "-----BEGIN PRIVATE KEY-----" > ssl/nginx.key; \
+		echo "PLACEHOLDER_PRIVATE_KEY" >> ssl/nginx.key; \
+		echo "-----END PRIVATE KEY-----" >> ssl/nginx.key; \
 	fi
 	@echo "$(GREEN)SSL certificates generated in ssl/ directory$(NC)"
 
