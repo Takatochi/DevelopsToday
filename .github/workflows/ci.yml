@@ -225,14 +225,38 @@ jobs:
     - name: Test Docker Compose (Lite)
       run: |
         docker compose -f docker-compose.lite.yml up -d --build
-        sleep 30
+        echo "Waiting for services to be ready..."
+        sleep 45
+        echo "Checking container status..."
+        docker compose -f docker-compose.lite.yml ps
+        echo "Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8080/health; then
+            echo "API is ready!"
+            break
+          fi
+          echo "Attempt $i: API not ready yet, waiting 5 seconds..."
+          sleep 5
+        done
         curl -f http://localhost:8080/health || exit 1
         docker compose -f docker-compose.lite.yml down
 
     - name: Test Docker Compose (Full Stack)
       run: |
         docker compose up -d --build
-        sleep 30
+        echo "Waiting for full stack services to be ready..."
+        sleep 60
+        echo "Checking container status..."
+        docker compose ps
+        echo "Waiting for HTTPS API to be ready..."
+        for i in {1..30}; do
+          if curl -k -f https://localhost/health; then
+            echo "HTTPS API is ready!"
+            break
+          fi
+          echo "Attempt $i: HTTPS API not ready yet, waiting 5 seconds..."
+          sleep 5
+        done
         curl -k -f https://localhost/health || exit 1
         curl -k -f https://localhost/swagger/index.html || exit 1
         docker compose down

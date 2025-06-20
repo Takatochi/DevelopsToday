@@ -113,3 +113,26 @@ jobs:
           -keyout ssl/nginx.key -out ssl/nginx.crt \
           -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
         ls -la ssl/
+
+    - name: Test Lite Docker Compose
+      run: |
+        echo "Testing lite version for reviewers..."
+        docker compose -f docker-compose.lite.yml up -d --build
+        echo "Waiting for lite services to be ready..."
+        sleep 45
+        echo "Checking container status..."
+        docker compose -f docker-compose.lite.yml ps
+        echo "Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8080/health; then
+            echo "API is ready!"
+            break
+          fi
+          echo "Attempt $i: API not ready yet, waiting 5 seconds..."
+          sleep 5
+        done
+        echo "Testing API endpoints..."
+        curl -f http://localhost:8080/health || exit 1
+        curl -f http://localhost:8080/swagger/index.html || exit 1
+        echo "API tests passed!"
+        docker compose -f docker-compose.lite.yml down
