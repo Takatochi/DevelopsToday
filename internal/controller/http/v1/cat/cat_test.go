@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"testing"
 
+	"DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/repo/mocks"
 	"DevelopsToday/internal/services"
@@ -38,17 +39,28 @@ func (m *MockValidator) IsValid(breedName string) bool {
 	return m.validBreeds[breedName]
 }
 
+// MockLogger для тестування
+type MockLogger struct{}
+
+func (m *MockLogger) Debug(message interface{}, args ...interface{}) {}
+func (m *MockLogger) Info(message string, args ...interface{})       {}
+func (m *MockLogger) Warn(message string, args ...interface{})       {}
+func (m *MockLogger) Error(message interface{}, args ...interface{}) {}
+func (m *MockLogger) Fatal(message interface{}, args ...interface{}) {}
+
 func setupTestRouter() (*gin.Engine, *Service) {
 	gin.SetMode(gin.TestMode)
 
 	store := mocks.NewRepository()
 	catService := services.NewCat(store.Cat())
 	validator := NewMockValidator()
+	mockLogger := &MockLogger{}
 
 	service := NewImplService(validator, catService)
-	handler := NewHandler(service, nil)
+	handler := NewHandler(service, mockLogger)
 
 	router := gin.New()
+	router.Use(middleware.GlobalErrorHandler())
 	v1 := router.Group("/v1")
 	cats := v1.Group("/cats")
 	{
