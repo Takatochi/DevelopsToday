@@ -34,9 +34,9 @@ services:
     container_name: spy-cats-db-prod
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER:-spy_cats}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-spy_cats_password}
+      - POSTGRES_DB=${POSTGRES_DB:-spy_cats}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -75,7 +75,7 @@ services:
     image: redis:7-alpine
     container_name: spy-cats-redis-prod
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
     volumes:
       - redis_data:/data
     networks:
