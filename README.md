@@ -72,6 +72,8 @@ cp .env.example .env
 # Edit .env file if needed
 make ssl-generate      # Generate SSL certificates
 make docker-compose-up # Start all services
+OR 
+make quick-ssl # Generate SSL certificates and start all services
 ```
 
 **Option B: Without Make**
