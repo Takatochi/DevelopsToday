@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/internal/dto"
-	"DevelopsToday/internal/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/repo"
 	"DevelopsToday/internal/services"

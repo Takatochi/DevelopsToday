@@ -40,7 +40,7 @@ func NewV1Controller(
 	// Middleware
 	engine.Use(middleware.LoggerMiddleware(l))
 	engine.Use(middleware.RecoveryMiddleware(l))
-	engine.Use(globalErrorHandler())
+	engine.Use(middleware.GlobalErrorHandler())
 
 	// Health check endpoint
 	engine.GET("/health", func(c *gin.Context) {
@@ -100,17 +100,6 @@ func NewV1Controller(
 			v1.NewSpyCatsRoutes(protectedGroup, catHandlerService, l)
 			v1.NewMissionsRoutes(protectedGroup, missionHandlerService, l)
 			v1.NewTargetsRoutes(protectedGroup, targetHandlerService, l)
-		}
-	}
-}
-
-func globalErrorHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-		if len(c.Errors) > 0 {
-			err := c.Errors.Last().Err
-			c.JSON(500, gin.H{"error": err.Error()})
-			c.Abort()
 		}
 	}
 }
