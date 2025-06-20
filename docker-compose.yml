@@ -81,21 +81,30 @@ services:
     container_name: spy-cats-ssl-init
     volumes:
       - ./ssl:/ssl
-    command: |
+    command: >
       sh -c "
-        if [ ! -f /ssl/nginx.crt ] || [ ! -f /ssl/nginx.key ]; then
-          echo 'Generating SSL certificates...'
-          apk add --no-cache openssl
-          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout /ssl/nginx.key -out /ssl/nginx.crt \
-            -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost'
-          chmod 644 /ssl/nginx.crt
-          chmod 600 /ssl/nginx.key
-          echo 'SSL certificates generated successfully'
+      echo '=== SSL Certificate Initialization ===';
+      mkdir -p /ssl;
+      if [ -f /ssl/nginx.crt ] && [ -f /ssl/nginx.key ]; then
+        echo 'SSL certificates already exist';
+        if openssl x509 -in /ssl/nginx.crt -noout -text >/dev/null 2>&1; then
+          echo 'Certificate is valid';
+          exit 0;
         else
-          echo 'SSL certificates already exist'
-        fi
+          echo 'Certificate is invalid, regenerating...';
+          rm -f /ssl/nginx.crt /ssl/nginx.key;
+        fi;
+      fi;
+      echo 'Installing OpenSSL...';
+      apk add --no-cache openssl;
+      echo 'Generating SSL certificates...';
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /ssl/nginx.key -out /ssl/nginx.crt -subj '/C=UA/ST=Kyiv/L=Kyiv/O=DevelopsToday/OU=SpyCats/CN=localhost';
+      chmod 644 /ssl/nginx.crt;
+      chmod 600 /ssl/nginx.key;
+      echo 'SSL certificates generated successfully!';
+      echo '=== SSL Initialization Complete ===';
       "
+    restart: "no"
 
   nginx:
     image: nginx:alpine
@@ -113,6 +122,12 @@ services:
         condition: service_completed_successfully
       app:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - app-network
 
