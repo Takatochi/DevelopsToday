@@ -2,7 +2,7 @@
 APP_NAME := spy-cats-api
 BINARY_NAME := app
 DOCKER_IMAGE := $(APP_NAME)
-GO_VERSION := 1.21
+GO_VERSION := 1.23
 
 # Docker Compose command (try new format first, fallback to old)
 DOCKER_COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")

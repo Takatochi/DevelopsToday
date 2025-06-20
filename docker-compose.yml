@@ -45,7 +45,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U spy_cats -d spy_cats"]
       interval: 30s
       timeout: 10s
       retries: 5
