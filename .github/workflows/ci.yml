@@ -224,18 +224,18 @@ jobs:
 
     - name: Test Docker Compose (Lite)
       run: |
-        docker-compose -f docker-compose.lite.yml up -d --build
+        docker compose -f docker-compose.lite.yml up -d --build
         sleep 30
         curl -f http://localhost:8080/health || exit 1
-        docker-compose -f docker-compose.lite.yml down
+        docker compose -f docker-compose.lite.yml down
 
     - name: Test Docker Compose (Full Stack)
       run: |
-        docker-compose up -d --build
+        docker compose up -d --build
         sleep 30
         curl -k -f https://localhost/health || exit 1
         curl -k -f https://localhost/swagger/index.html || exit 1
-        docker-compose down
+        docker compose down
 
   security:
     name: Security Scan

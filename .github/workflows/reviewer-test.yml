@@ -102,9 +102,9 @@ jobs:
 
     - name: Validate Docker Compose files
       run: |
-        docker-compose -f docker-compose.yml config
-        docker-compose -f docker-compose.lite.yml config
-        docker-compose -f docker-compose.prod.yml config
+        docker compose -f docker-compose.yml config
+        docker compose -f docker-compose.lite.yml config
+        docker compose -f docker-compose.prod.yml config
 
     - name: Test SSL setup (manual)
       run: |
