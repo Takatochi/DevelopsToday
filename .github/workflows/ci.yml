@@ -235,7 +235,8 @@ jobs:
           echo ".env file exists:"
           cat .env
         else
-          echo "No .env file found (using defaults)"
+          echo "No .env file found, creating one for CI..."
+          cp .env.example .env || echo "No .env.example found, using defaults"
         fi
 
         echo "Testing if app can build..."
