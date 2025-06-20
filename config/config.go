@@ -33,7 +33,7 @@ type (
 	}
 
 	PG struct {
-		URL     string `env:"PG_URL" envDefault:"postgres://spy_cats:spy_cats_password@postgres:5432/spy_cats?sslmode=disable"`
+		URL     string `env:"PG_URL" envDefault:"postgres://spy_cats:spy_cats_password@postgres:5432/spy_cats?sslmode=disable"` //nolint:lll
 		PoolMax int    `env:"PG_POOL_MAX" envDefault:"10"`
 	}
 

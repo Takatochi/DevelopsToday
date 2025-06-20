@@ -3,7 +3,9 @@ package auth
 import (
 	"context"
 	"net/http"
+	"time"
 
+	"DevelopsToday/internal/dto"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/repo"
 	"DevelopsToday/internal/services"
@@ -40,7 +42,7 @@ func NewHandler(userRepo repo.UserRepository, jwtService *services.JWTService, l
 // @Failure 500 {object} map[string]string
 // @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
-	var req RegisterRequest
+	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -86,12 +88,14 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	response := AuthResponse{
-		User: UserResponse{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email,
-			Role:     user.Role,
+	response := dto.AuthResponse{
+		User: dto.UserResponse{
+			ID:        user.ID,
+			Username:  user.Username,
+			Email:     user.Email,
+			Role:      user.Role,
+			CreatedAt: user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 		},
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
@@ -113,7 +117,7 @@ func (h *Handler) Register(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
-	var req LoginRequest
+	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -147,12 +151,14 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	response := AuthResponse{
-		User: UserResponse{
-			ID:       user.ID,
-			Username: user.Username,
-			Email:    user.Email,
-			Role:     user.Role,
+	response := dto.AuthResponse{
+		User: dto.UserResponse{
+			ID:        user.ID,
+			Username:  user.Username,
+			Email:     user.Email,
+			Role:      user.Role,
+			CreatedAt: user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 		},
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
@@ -174,7 +180,7 @@ func (h *Handler) Login(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /auth/refresh [post]
 func (h *Handler) Refresh(c *gin.Context) {
-	var req RefreshRequest
+	var req dto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -241,11 +247,13 @@ func (h *Handler) Me(c *gin.Context) {
 		return
 	}
 
-	response := UserResponse{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-		Role:     user.Role,
+	response := dto.UserResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}
 
 	c.JSON(http.StatusOK, response)
