@@ -16,6 +16,8 @@ REST API for managing spy cats, missions, and targets with JWT authentication.
 ```bash
 git clone https://github.com/Takatochi/DevelopsToday.git
 cd DevelopsToday
+cp .env.example .env
+# Edit .env file if needed
 make quick-lite        # Start API + DB + Redis (no SSL setup needed)
 ```
 
@@ -23,6 +25,8 @@ make quick-lite        # Start API + DB + Redis (no SSL setup needed)
 ```bash
 git clone https://github.com/Takatochi/DevelopsToday.git
 cd DevelopsToday
+cp .env.example .env
+# Edit .env file if needed
 swag init -g internal/controller/http/controller.go -o docs  # Generate docs (optional)
 docker-compose -f docker-compose.lite.yml up -d --build     # Start services
 ```
@@ -37,6 +41,8 @@ docker-compose -f docker-compose.lite.yml up -d --build     # Start services
 ```bash
 git clone https://github.com/Takatochi/DevelopsToday.git
 cd DevelopsToday
+cp .env.example .env
+# Edit .env file if needed
 make reviewer-setup    # Complete setup + start all services with SSL
 ```
 
@@ -62,6 +68,8 @@ docker-compose up -d --build
 ```bash
 git clone https://github.com/Takatochi/DevelopsToday.git
 cd DevelopsToday
+cp .env.example .env
+# Edit .env file if needed
 make ssl-generate      # Generate SSL certificates
 make docker-compose-up # Start all services
 ```
@@ -70,6 +78,8 @@ make docker-compose-up # Start all services
 ```bash
 git clone https://github.com/Takatochi/DevelopsToday.git
 cd DevelopsToday
+cp .env.example .env
+# Edit .env file if needed
 # Create SSL directory and generate certificates
 mkdir -p ssl
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -266,3 +276,7 @@ make ssl-fix               # Fix SSL certificate issues
 make status                # Check service status
 make logs-all              # View all service logs
 ```
+![img.png](img.png)
+![img_1.png](img_1.png)
+![img_2.png](img_2.png)
+
