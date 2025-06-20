@@ -27,40 +27,6 @@ func NewHandler(userRepo repo.UserRepository, jwtService *services.JWTService, l
 	}
 }
 
-// RegisterRequest represents the registration request
-type RegisterRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=50"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-	Role     string `json:"role,omitempty"`
-}
-
-// LoginRequest represents the login request
-type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-// RefreshRequest represents the refresh token request
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
-}
-
-// AuthResponse represents the authentication response
-type AuthResponse struct {
-	User         UserResponse `json:"user"`
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-}
-
-// UserResponse represents the user data in response
-type UserResponse struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Role     string `json:"role"`
-}
-
 // Register godoc
 // @Summary Register a new user
 // @Description Register a new user with username, email and password

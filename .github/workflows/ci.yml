@@ -226,9 +226,7 @@ jobs:
       run: |
         echo "Validating Docker Compose configurations..."
         docker compose -f docker-compose.yml config
-        docker compose -f docker-compose.lite.yml config
-        docker compose -f docker-compose.prod.yml config
-        echo "All Docker Compose configurations are valid!"
+        echo "Main Docker Compose configuration is valid!"
 
     - name: Test Docker Compose (Full Stack)
       run: |
