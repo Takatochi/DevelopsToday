@@ -40,6 +40,11 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
+	// Seed database for testing (ignore errors if data already exists)
+	if err = repo.Seed(db); err != nil {
+		l.Info("Database seeding skipped (data may already exist): %v", err)
+	}
+
 	// Repository
 	store := postgres.NewRepository(db)
 

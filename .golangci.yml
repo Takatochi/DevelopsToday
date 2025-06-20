@@ -3,15 +3,7 @@ run:
   issues-exit-code: 1
   tests: true
 
-issues:
-  exclude-dirs:
-    - vendor
-    - tmp
-    - build
-    - bin
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*_gen\\.go$"
+
 
 output:
   formats:
@@ -25,32 +17,26 @@ linters-settings:
     enable-all: true
     disable:
       - fieldalignment  # Відключаємо перевірку вирівнювання полів структур
-  
-  golint:
-    min-confidence: 0.8
-  
+
   gocyclo:
     min-complexity: 15
-  
-  maligned:
-    suggest-new: true
-  
+
   dupl:
     threshold: 100
-  
+
   goconst:
     min-len: 2
     min-occurrences: 3
-  
+
   misspell:
     locale: US
-  
+
   lll:
     line-length: 120
-  
+
   goimports:
     local-prefixes: DevelopsToday
-  
+
   gocritic:
     enabled-tags:
       - diagnostic
@@ -64,30 +50,39 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
-  
+
   funlen:
     lines: 100
     statements: 50
-  
+
   gocognit:
     min-complexity: 20
-  
+
   nestif:
     min-complexity: 4
-  
-  gomnd:
-    settings:
-      mnd:
-        checks: argument,case,condition,operation,return,assign
-        ignored-numbers: 0,1,2,3
-        ignored-functions: strings.SplitN
-  
+
+  mnd:
+    checks:
+      - argument
+      - case
+      - condition
+      - operation
+      - return
+      - assign
+    ignored-numbers:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+    ignored-functions:
+      - strings.SplitN
+
   godox:
     keywords:
       - NOTE
       - OPTIMIZE
       - HACK
-  
+
   depguard:
     rules:
       main:
@@ -120,6 +115,17 @@ linters:
     - unparam
     - unused
 
+issues:
+  exclude-dirs:
+    - vendor
+    - tmp
+    - build
+    - bin
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_gen\\.go$"
+  max-issues-per-linter: 50
+  max-same-issues: 3
   exclude-rules:
     - path: _test\.go
       linters:
@@ -286,11 +292,6 @@ linters:
     - text: "struct with .* pointer bytes could be"
       linters:
         - govet
-
-  exclude-use-default: false
-  max-issues-per-linter: 50
-  max-same-issues: 3
-  uniq-by-line: true
 
 severity:
   default-severity: error
