@@ -25,8 +25,16 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DB=${REDIS_DB:-0}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - app-network
 
@@ -68,6 +76,27 @@ services:
       retries: 5
       start_period: 30s
 
+  ssl-init:
+    image: alpine:latest
+    container_name: spy-cats-ssl-init
+    volumes:
+      - ./ssl:/ssl
+    command: |
+      sh -c "
+        if [ ! -f /ssl/nginx.crt ] || [ ! -f /ssl/nginx.key ]; then
+          echo 'Generating SSL certificates...'
+          apk add --no-cache openssl
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout /ssl/nginx.key -out /ssl/nginx.crt \
+            -subj '/C=US/ST=State/L=City/O=Organization/CN=localhost'
+          chmod 644 /ssl/nginx.crt
+          chmod 600 /ssl/nginx.key
+          echo 'SSL certificates generated successfully'
+        else
+          echo 'SSL certificates already exist'
+        fi
+      "
+
   nginx:
     image: nginx:alpine
     container_name: spy-cats-nginx
@@ -80,7 +109,10 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - app
+      ssl-init:
+        condition: service_completed_successfully
+      app:
+        condition: service_healthy
     networks:
       - app-network
 
