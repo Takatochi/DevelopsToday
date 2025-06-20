@@ -240,6 +240,10 @@ jobs:
           echo "No .env file found (using defaults)"
         fi
 
+        echo "Testing if app can build..."
+        go build -o test-app ./cmd/main.go || echo "Go build failed"
+        rm -f test-app
+
         echo "Starting Docker Compose..."
         docker compose up -d --build
         echo "Waiting for full stack services to be ready..."
@@ -247,9 +251,13 @@ jobs:
         echo "Checking container status..."
         docker compose ps
         echo "Checking container logs..."
-        docker compose logs spy-cats-api
+        docker compose logs app
         echo "Checking nginx logs..."
-        docker compose logs spy-cats-nginx
+        docker compose logs nginx
+        echo "Checking all container logs for errors..."
+        docker compose logs
+        echo "Inspecting app container..."
+        docker inspect spy-cats-api || echo "Container inspect failed"
         echo "Checking network connectivity..."
         netstat -tlnp | grep :8080 || echo "Port 8080 not listening"
         netstat -tlnp | grep :443 || echo "Port 443 not listening"
