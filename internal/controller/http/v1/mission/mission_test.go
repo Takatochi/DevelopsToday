@@ -24,7 +24,7 @@ func setupTestRouter() (*gin.Engine, *Service) {
 	missionService := services.NewMission(store.Mission())
 
 	service := NewImplService(missionService)
-	handler := &Handler{Service: service}
+	handler := NewHandler(service, nil)
 
 	router := gin.New()
 	v1 := router.Group("/v1")

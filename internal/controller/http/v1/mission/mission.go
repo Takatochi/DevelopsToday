@@ -6,6 +6,7 @@ import (
 
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/services"
+	"DevelopsToday/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +22,15 @@ func NewImplService(missionContext services.MissionContext) *Service {
 }
 
 type Handler struct {
-	Service *Service
+	service *Service
+	logger  logger.Interface
+}
+
+func NewHandler(service *Service, logger logger.Interface) *Handler {
+	return &Handler{
+		service: service,
+		logger:  logger,
+	}
 }
 
 // CreateRequest represents the request body for creating a mission
@@ -58,7 +67,7 @@ func (h *Handler) Create(ctx *gin.Context) {
 		Targets: input.Targets,
 	}
 
-	if err := h.Service._missionContext.Create(ctx, mission); err != nil {
+	if err := h.service._missionContext.Create(ctx, mission); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create mission"})
 		return
 	}
@@ -77,7 +86,7 @@ func (h *Handler) Create(ctx *gin.Context) {
 //	@Failure		401	{object}	map[string]interface{}
 //	@Router			/missions [get]
 func (h *Handler) List(ctx *gin.Context) {
-	missions, err := h.Service._missionContext.GetAll(ctx)
+	missions, err := h.service._missionContext.GetAll(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list missions"})
 		return
@@ -99,7 +108,7 @@ func (h *Handler) List(ctx *gin.Context) {
 //	@Router			/missions/{id} [get]
 func (h *Handler) GetByID(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
-	mission, err := h.Service._missionContext.GetByID(ctx, uint(id))
+	mission, err := h.service._missionContext.GetByID(ctx, uint(id))
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
 		return
@@ -129,7 +138,7 @@ func (h *Handler) AssignCat(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-	if err := h.Service._missionContext.AssignCat(ctx, uint(id), body.CatID); err != nil {
+	if err := h.service._missionContext.AssignCat(ctx, uint(id), body.CatID); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assign cat"})
 		return
 	}
@@ -157,7 +166,7 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 	}
 
 	// Викликаємо сервісний метод
-	err = h.Service._missionContext.MarkComplete(ctx, uint(id))
+	err = h.service._missionContext.MarkComplete(ctx, uint(id))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -186,7 +195,7 @@ func (h *Handler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	err = h.Service._missionContext.DeleteByID(ctx, uint(id))
+	err = h.service._missionContext.DeleteByID(ctx, uint(id))
 	if err != nil {
 		if err.Error() == "cannot delete assigned mission" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

@@ -10,9 +10,9 @@ import (
 )
 
 func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service *cat.Service, l logger.Interface) {
-	handler := &V1{cat: &cat.Handler{
-		Service: service,
-	}}
+	handler := &V1{
+		cat: cat.NewHandler(service, l),
+	}
 
 	cats := apiV1Group.Group("/cats")
 	cats.POST("", handler.cat.Create)
@@ -22,9 +22,9 @@ func NewSpyCatsRoutes(apiV1Group *gin.RouterGroup, service *cat.Service, l logge
 	cats.DELETE("/:id", handler.cat.Delete)
 }
 func NewMissionsRoutes(apiV1Group *gin.RouterGroup, service *mission.Service, l logger.Interface) {
-	handler := &V1{mission: &mission.Handler{
-		Service: service,
-	}}
+	handler := &V1{
+		mission: mission.NewHandler(service, l),
+	}
 	missions := apiV1Group.Group("/missions")
 	missions.POST("", handler.mission.Create)
 	missions.GET("", handler.mission.List)
@@ -34,9 +34,9 @@ func NewMissionsRoutes(apiV1Group *gin.RouterGroup, service *mission.Service, l 
 	missions.DELETE("/:id", handler.mission.Delete)
 }
 func NewTargetsRoutes(apiV1Group *gin.RouterGroup, service *target.Service, l logger.Interface) {
-	handler := &V1{target: &target.Handler{
-		Service: service,
-	}}
+	handler := &V1{
+		target: target.NewHandler(service, l),
+	}
 	targets := apiV1Group.Group("/missions/:id/targets")
 	targets.POST("", handler.target.Add)
 	targets.DELETE("/:tid", handler.target.Delete)
