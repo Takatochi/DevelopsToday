@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"DevelopsToday/internal/dto"
+	"DevelopsToday/internal/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/repo"
 	"DevelopsToday/internal/services"
@@ -14,12 +14,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-)
-
-var (
-	ErrUnauthorized = errors.New("unauthorized")
-	ErrConflict     = errors.New("conflict")
-	ErrBadRequest   = errors.New("bad request")
 )
 
 type Handler struct {
@@ -59,12 +53,12 @@ func (h *Handler) Register(c *gin.Context) {
 
 	// Check if user already exists
 	if _, err := h.userRepo.FindByUsername(ctx, req.Username); err == nil {
-		c.Error(ErrConflict)
+		c.Error(middleware.ErrUserExists)
 		return
 	}
 
 	if _, err := h.userRepo.FindByEmail(ctx, req.Email); err == nil {
-		c.Error(ErrConflict)
+		c.Error(middleware.ErrEmailExists)
 		return
 	}
 
@@ -136,7 +130,7 @@ func (h *Handler) Login(c *gin.Context) {
 	user, err := h.userRepo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.Error(ErrUnauthorized)
+			c.Error(middleware.ErrInvalidCreds)
 			return
 		}
 		h.logger.Error("Failed to find user: %v", err)
@@ -146,7 +140,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	// Check password
 	if !user.CheckPassword(req.Password) {
-		c.Error(ErrUnauthorized)
+		c.Error(middleware.ErrInvalidCreds)
 		return
 	}
 
