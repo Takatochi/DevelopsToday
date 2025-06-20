@@ -1,6 +1,7 @@
 package target
 
 import (
+	"DevelopsToday/pkg/logger"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,15 @@ func NewImplService(targetContext services.TargetContext) *Service {
 }
 
 type Handler struct {
-	Service *Service
+	service *Service
+	logger  logger.Interface
+}
+
+func NewHandler(service *Service, logger logger.Interface) *Handler {
+	return &Handler{
+		service: service,
+		logger:  logger,
+	}
 }
 
 // UpdateNotesRequest represents request body for updating target notes
@@ -57,7 +66,7 @@ func (h *Handler) Add(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Service._targetContext.Add(ctx, uint(mid), &input); err != nil {
+	if err := h.service._targetContext.Add(ctx, uint(mid), &input); err != nil {
 		if err.Error() == "cannot add target to completed mission" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		} else {
@@ -100,12 +109,12 @@ func (h *Handler) UpdateNotes(ctx *gin.Context) {
 	}
 
 	var body UpdateNotesRequest
-	if err := ctx.ShouldBindJSON(&body); err != nil {
+	if err = ctx.ShouldBindJSON(&body); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notes"})
 		return
 	}
 
-	if err := h.Service._targetContext.UpdateNotes(ctx, uint(mid), uint(tid), body.Notes); err != nil {
+	if err = h.service._targetContext.UpdateNotes(ctx, uint(mid), uint(tid), body.Notes); err != nil {
 		if err.Error() == "mission is completed" || err.Error() == "target is completed" {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		} else {
@@ -137,7 +146,7 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Service._targetContext.MarkComplete(ctx, uint(tid)); err != nil {
+	if err := h.service._targetContext.MarkComplete(ctx, uint(tid)); err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
 		return
 	}
@@ -172,7 +181,7 @@ func (h *Handler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Service._targetContext.DeleteByID(ctx, uint(mid), uint(tid)); err != nil {
+	if err = h.service._targetContext.DeleteByID(ctx, uint(mid), uint(tid)); err != nil {
 		if err.Error() == "cannot delete completed target" {
 			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		} else {

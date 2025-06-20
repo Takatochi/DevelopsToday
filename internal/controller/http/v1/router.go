@@ -34,9 +34,9 @@ func NewMissionsRoutes(apiV1Group *gin.RouterGroup, service *mission.Service, l 
 	missions.DELETE("/:id", handler.mission.Delete)
 }
 func NewTargetsRoutes(apiV1Group *gin.RouterGroup, service *target.Service, l logger.Interface) {
-	handler := &V1{target: &target.Handler{
-		Service: service,
-	}}
+	handler := &V1{
+		target: target.NewHandler(service, l),
+	}
 	targets := apiV1Group.Group("/missions/:id/targets")
 	targets.POST("", handler.target.Add)
 	targets.DELETE("/:tid", handler.target.Delete)
