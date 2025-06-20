@@ -85,7 +85,7 @@ func (h *Handler) Register(c *gin.Context) {
 	tokens, err := h.jwtService.GenerateTokenPair(user.ID, user.Username, user.Role)
 	if err != nil {
 		h.logger.Error("Failed to generate tokens: %v", err)
-		_ = c.Error(err)
+		_ = c.Error(middleware.ErrGenerateToken)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (h *Handler) Login(c *gin.Context) {
 	tokens, err := h.jwtService.GenerateTokenPair(user.ID, user.Username, user.Role)
 	if err != nil {
 		h.logger.Error("Failed to generate tokens: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		_ = c.Error(middleware.ErrGenerateToken)
 		return
 	}
 
@@ -183,13 +183,13 @@ func (h *Handler) Login(c *gin.Context) {
 func (h *Handler) Refresh(c *gin.Context) {
 	var req dto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		_ = c.Error(middleware.NewAppError("BAD_REQUEST", err.Error(), http.StatusBadRequest))
 		return
 	}
 
 	tokens, err := h.jwtService.RefreshToken(req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		_ = c.Error(middleware.ErrInvalidToken)
 		return
 	}
 
@@ -210,13 +210,14 @@ func (h *Handler) Refresh(c *gin.Context) {
 func (h *Handler) Logout(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		_ = c.Error(middleware.ErrUnauthorized)
+		h.logger.Warn("Logout failed missing user_id in context")
 		return
 	}
 
 	if err := h.jwtService.RevokeToken(userID.(uint)); err != nil {
+		_ = c.Error(middleware.ErrFailedRefresh)
 		h.logger.Error("Failed to revoke token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout"})
 		return
 	}
 
@@ -236,7 +237,7 @@ func (h *Handler) Logout(c *gin.Context) {
 func (h *Handler) Me(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		_ = c.Error(middleware.ErrUnauthorized)
 		return
 	}
 
@@ -244,7 +245,7 @@ func (h *Handler) Me(c *gin.Context) {
 	user, err := h.userRepo.FindByID(ctx, userID.(uint))
 	if err != nil {
 		h.logger.Error("Failed to find user: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+		_ = c.Error(err)
 		return
 	}
 

@@ -11,10 +11,13 @@ import (
 )
 
 var (
-	ErrUnauthorized = NewAuthError("UNAUTHORIZED", "Authentication required", http.StatusUnauthorized)
-	ErrInvalidToken = NewAuthError("INVALID_TOKEN", "Invalid or expired token", http.StatusUnauthorized)
-	ErrForbidden    = NewAuthError("FORBIDDEN", "Access denied", http.StatusForbidden)
-	ErrInvalidCreds = NewAuthError("INVALID_CREDENTIALS", "Invalid username or password", http.StatusUnauthorized)
+	ErrUnauthorized  = NewAuthError("UNAUTHORIZED", "Authentication required", http.StatusUnauthorized)
+	ErrInvalidToken  = NewAuthError("INVALID_TOKEN", "Invalid or expired token", http.StatusUnauthorized)
+	ErrForbidden     = NewAuthError("FORBIDDEN", "Access denied", http.StatusForbidden)
+	ErrInvalidCreds  = NewAuthError("INVALID_CREDENTIALS", "Invalid username or password", http.StatusUnauthorized)
+	ErrFailedRefresh = NewAuthError("FAILED_REFRESH", "Failed to refresh token", http.StatusUnauthorized)
+	ErrRevokedToken  = NewAuthError("REVOKED_TOKEN", "Token has been revoked", http.StatusUnauthorized)
+	ErrGenerateToken = NewAuthError("FAILED_GENERATE_TOKEN", "Failed to generate token", http.StatusInternalServerError)
 
 	ErrNotFound        = NewAppError("NOT_FOUND", "Resource not found", http.StatusNotFound)
 	ErrUserNotFound    = NewAppError("USER_NOT_FOUND", "User not found", http.StatusNotFound)
