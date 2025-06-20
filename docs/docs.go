@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.AuthResponse"
+                            "$ref": "#/definitions/dto.AuthResponse"
                         }
                     },
                     "400": {
@@ -144,7 +144,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "401": {
@@ -188,7 +188,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RefreshRequest"
+                            "$ref": "#/definitions/dto.RefreshRequest"
                         }
                     }
                 ],
@@ -249,7 +249,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RegisterRequest"
+                            "$ref": "#/definitions/dto.RegisterRequest"
                         }
                     }
                 ],
@@ -257,7 +257,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/auth.AuthResponse"
+                            "$ref": "#/definitions/dto.AuthResponse"
                         }
                     },
                     "400": {
@@ -1104,21 +1104,32 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.AuthResponse": {
+        "dto.AuthResponse": {
+            "description": "Authentication response with user data and tokens",
             "type": "object",
             "properties": {
                 "access_token": {
-                    "type": "string"
+                    "description": "JWT access token for API authentication\n@example \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 },
                 "refresh_token": {
-                    "type": "string"
+                    "description": "JWT refresh token for obtaining new access tokens\n@example \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 },
                 "user": {
-                    "$ref": "#/definitions/auth.UserResponse"
+                    "description": "User information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    ]
                 }
             }
         },
-        "auth.LoginRequest": {
+        "dto.LoginRequest": {
+            "description": "User login request",
             "type": "object",
             "required": [
                 "password",
@@ -1126,25 +1137,33 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "type": "string"
+                    "description": "Password for authentication\n@example \"securepassword123\"",
+                    "type": "string",
+                    "example": "securepassword123"
                 },
                 "username": {
-                    "type": "string"
+                    "description": "Username or email for authentication\n@example \"john_doe\"",
+                    "type": "string",
+                    "example": "john_doe"
                 }
             }
         },
-        "auth.RefreshRequest": {
+        "dto.RefreshRequest": {
+            "description": "Refresh token request",
             "type": "object",
             "required": [
                 "refresh_token"
             ],
             "properties": {
                 "refresh_token": {
-                    "type": "string"
+                    "description": "Refresh token to obtain new access token\n@example \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"",
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
             }
         },
-        "auth.RegisterRequest": {
+        "dto.RegisterRequest": {
+            "description": "User registration request",
             "type": "object",
             "required": [
                 "email",
@@ -1153,36 +1172,63 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "description": "Email address for the new user account\n@example \"john.doe@example.com\"",
+                    "type": "string",
+                    "example": "john.doe@example.com"
                 },
                 "password": {
+                    "description": "Password for the new user account (minimum 6 characters)\n@example \"securepassword123\"",
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "securepassword123"
                 },
                 "role": {
-                    "type": "string"
+                    "description": "Role for the user (optional, defaults to \"spy\")\n@example \"spy\"",
+                    "type": "string",
+                    "example": "spy"
                 },
                 "username": {
+                    "description": "Username for the new user account\n@example \"john_doe\"",
                     "type": "string",
                     "maxLength": 50,
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "john_doe"
                 }
             }
         },
-        "auth.UserResponse": {
+        "dto.UserResponse": {
+            "description": "User information in API responses",
             "type": "object",
             "properties": {
+                "created_at": {
+                    "description": "Account creation timestamp\n@example \"2023-12-01T10:00:00Z\"",
+                    "type": "string",
+                    "example": "2023-12-01T10:00:00Z"
+                },
                 "email": {
-                    "type": "string"
+                    "description": "Email address of the user\n@example \"john.doe@example.com\"",
+                    "type": "string",
+                    "example": "john.doe@example.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "description": "Unique user identifier\n@example 1",
+                    "type": "integer",
+                    "example": 1
                 },
                 "role": {
-                    "type": "string"
+                    "description": "Role of the user\n@example \"spy\"",
+                    "type": "string",
+                    "example": "spy"
+                },
+                "updated_at": {
+                    "description": "Last update timestamp\n@example \"2023-12-01T10:00:00Z\"",
+                    "type": "string",
+                    "example": "2023-12-01T10:00:00Z"
                 },
                 "username": {
-                    "type": "string"
+                    "description": "Username of the user\n@example \"john_doe\"",
+                    "type": "string",
+                    "example": "john_doe"
                 }
             }
         },

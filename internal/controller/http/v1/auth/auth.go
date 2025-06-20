@@ -35,8 +35,8 @@ func NewHandler(userRepo repo.UserRepository, jwtService *services.JWTService, l
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body RegisterRequest true "Registration data"
-// @Success 201 {object} AuthResponse
+// @Param request body dto.RegisterRequest true "Registration data"
+// @Success 201 {object} dto.AuthResponse
 // @Failure 400 {object} map[string]string
 // @Failure 409 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -110,8 +110,8 @@ func (h *Handler) Register(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body LoginRequest true "Login credentials"
-// @Success 200 {object} AuthResponse
+// @Param request body dto.LoginRequest true "Login credentials"
+// @Success 200 {object} dto.AuthResponse
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -173,7 +173,7 @@ func (h *Handler) Login(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body RefreshRequest true "Refresh token"
+// @Param request body dto.RefreshRequest true "Refresh token"
 // @Success 200 {object} services.TokenPair
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
@@ -228,7 +228,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // @Tags auth
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} UserResponse
+// @Success 200 {object} dto.UserResponse
 // @Failure 401 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /auth/me [get]

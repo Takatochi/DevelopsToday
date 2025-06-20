@@ -1,41 +1,83 @@
 basePath: /v1
 definitions:
-  auth.AuthResponse:
+  dto.AuthResponse:
+    description: Authentication response with user data and tokens
     properties:
       access_token:
+        description: |-
+          JWT access token for API authentication
+          @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
       refresh_token:
+        description: |-
+          JWT refresh token for obtaining new access tokens
+          @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
       user:
-        $ref: '#/definitions/auth.UserResponse'
+        allOf:
+        - $ref: '#/definitions/dto.UserResponse'
+        description: User information
     type: object
-  auth.LoginRequest:
+  dto.LoginRequest:
+    description: User login request
     properties:
       password:
+        description: |-
+          Password for authentication
+          @example "securepassword123"
+        example: securepassword123
         type: string
       username:
+        description: |-
+          Username or email for authentication
+          @example "john_doe"
+        example: john_doe
         type: string
     required:
     - password
     - username
     type: object
-  auth.RefreshRequest:
+  dto.RefreshRequest:
+    description: Refresh token request
     properties:
       refresh_token:
+        description: |-
+          Refresh token to obtain new access token
+          @example "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     required:
     - refresh_token
     type: object
-  auth.RegisterRequest:
+  dto.RegisterRequest:
+    description: User registration request
     properties:
       email:
+        description: |-
+          Email address for the new user account
+          @example "john.doe@example.com"
+        example: john.doe@example.com
         type: string
       password:
+        description: |-
+          Password for the new user account (minimum 6 characters)
+          @example "securepassword123"
+        example: securepassword123
         minLength: 6
         type: string
       role:
+        description: |-
+          Role for the user (optional, defaults to "spy")
+          @example "spy"
+        example: spy
         type: string
       username:
+        description: |-
+          Username for the new user account
+          @example "john_doe"
+        example: john_doe
         maxLength: 50
         minLength: 3
         type: string
@@ -44,15 +86,44 @@ definitions:
     - password
     - username
     type: object
-  auth.UserResponse:
+  dto.UserResponse:
+    description: User information in API responses
     properties:
+      created_at:
+        description: |-
+          Account creation timestamp
+          @example "2023-12-01T10:00:00Z"
+        example: "2023-12-01T10:00:00Z"
+        type: string
       email:
+        description: |-
+          Email address of the user
+          @example "john.doe@example.com"
+        example: john.doe@example.com
         type: string
       id:
+        description: |-
+          Unique user identifier
+          @example 1
+        example: 1
         type: integer
       role:
+        description: |-
+          Role of the user
+          @example "spy"
+        example: spy
+        type: string
+      updated_at:
+        description: |-
+          Last update timestamp
+          @example "2023-12-01T10:00:00Z"
+        example: "2023-12-01T10:00:00Z"
         type: string
       username:
+        description: |-
+          Username of the user
+          @example "john_doe"
+        example: john_doe
         type: string
     type: object
   mission.AssignCatRequest:
@@ -141,14 +212,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.AuthResponse'
+            $ref: '#/definitions/dto.AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -210,7 +281,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.UserResponse'
+            $ref: '#/definitions/dto.UserResponse'
         "401":
           description: Unauthorized
           schema:
@@ -239,7 +310,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.RefreshRequest'
+          $ref: '#/definitions/dto.RefreshRequest'
       produces:
       - application/json
       responses:
@@ -279,14 +350,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.RegisterRequest'
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/auth.AuthResponse'
+            $ref: '#/definitions/dto.AuthResponse'
         "400":
           description: Bad Request
           schema:
