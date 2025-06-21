@@ -10,7 +10,26 @@ REST API for managing spy cats, missions, and targets with JWT authentication.
 
 ## Quick Start
 
-### Ultra-Fast Start (Recommended for Quick Testing)
+### Docker Registry (Fastest - No Build Required)
+
+**Pull pre-built image from GitHub Container Registry:**
+```bash
+# Option 1: Just the API (requires external DB)
+docker pull ghcr.io/takatochi/developstodayrepo:latest
+docker run -p 8080:8080 \
+  -e PG_URL="postgres://user:pass@host:5432/dbname" \
+  ghcr.io/takatochi/developstodayrepo:latest
+
+# Option 2: Full stack with production Docker Compose
+curl -O https://raw.githubusercontent.com/Takatochi/DevelopsToday/main/docker-compose.prod.yml
+GITHUB_REPOSITORY=takatochi/developstodayrepo docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Access**: http://localhost:8080/swagger/index.html
+
+### 🛠️ Local Development Build
+
+#### Ultra-Fast Start (Recommended for Quick Testing)
 
 **Option A: With Make (Recommended)**
 ```bash

@@ -2,9 +2,9 @@ name: Reviewer Test Suite
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev, self-code-review ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, dev, self-code-review ]
   workflow_dispatch:
 
 env:

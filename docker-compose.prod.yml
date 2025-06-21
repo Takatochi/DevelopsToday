@@ -1,10 +1,10 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY:-takatochi/developstodayrepo}:latest
     container_name: spy-cats-api-prod
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
       - APP_NAME=${APP_NAME}
       - APP_VERSION=${APP_VERSION}

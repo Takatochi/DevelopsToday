@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, self-code-review ]
   workflow_dispatch:
     inputs:
       environment:
