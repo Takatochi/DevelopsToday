@@ -284,6 +284,108 @@
                 }
             }
         },
+        "/bulk/cats": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create multiple cats in parallel using worker pool",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bulk"
+                ],
+                "summary": "Bulk create cats",
+                "parameters": [
+                    {
+                        "description": "Bulk cat creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bulk.BulkCreateCatsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/services.BulkResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bulk/cats/salary": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update multiple cat salaries in parallel using worker pool",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bulk"
+                ],
+                "summary": "Bulk update cat salaries",
+                "parameters": [
+                    {
+                        "description": "Bulk salary update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bulk.BulkSalaryUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.BulkResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/cats": {
             "get": {
                 "security": [
@@ -1095,9 +1197,75 @@
                     }
                 }
             }
+        },
+        "/stats/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get comprehensive dashboard statistics including cats, missions, and targets data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get dashboard statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.DashboardStats"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "bulk.BulkCreateCatsRequest": {
+            "type": "object",
+            "required": [
+                "cats"
+            ],
+            "properties": {
+                "cats": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/models.Cat"
+                    }
+                }
+            }
+        },
+        "bulk.BulkSalaryUpdateRequest": {
+            "type": "object",
+            "required": [
+                "updates"
+            ],
+            "properties": {
+                "updates": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/services.SalaryUpdate"
+                    }
+                }
+            }
+        },
         "dto.AuthResponse": {
             "description": "Authentication response with user data and tokens",
             "type": "object",
@@ -1119,6 +1287,25 @@
                             "$ref": "#/definitions/dto.UserResponse"
                         }
                     ]
+                }
+            }
+        },
+        "dto.ErrorResponse": {
+            "description": "Error response structure",
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Error code (optional)\n@example \"VALIDATION_ERROR\"",
+                    "type": "string",
+                    "example": "VALIDATION_ERROR"
+                },
+                "details": {
+                    "description": "Additional error details (optional)\n@example {\"field\": \"username\", \"message\": \"Username is required\"}"
+                },
+                "error": {
+                    "description": "Error message\n@example \"Invalid request parameters\"",
+                    "type": "string",
+                    "example": "Invalid request parameters"
                 }
             }
         },
@@ -1228,17 +1415,26 @@
         },
         "mission.AssignCatRequest": {
             "type": "object",
+            "required": [
+                "cat_id"
+            ],
             "properties": {
                 "cat_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
         "mission.CreateRequest": {
             "type": "object",
+            "required": [
+                "targets"
+            ],
             "properties": {
                 "targets": {
                     "type": "array",
+                    "maxItems": 3,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/models.Target"
                     }
@@ -1248,22 +1444,37 @@
         "models.Cat": {
             "description": "Cat entity",
             "type": "object",
+            "required": [
+                "breed",
+                "name"
+            ],
             "properties": {
                 "breed": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "example": "Bengal"
                 },
                 "experience": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 50,
+                    "minimum": 0,
+                    "example": 5
                 },
                 "id": {
                     "type": "integer",
                     "example": 1
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "Whiskers"
                 },
                 "salary": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 1000.5
                 }
             }
         },
@@ -1291,21 +1502,96 @@
         "models.Target": {
             "description": "Target entity that needs to be completed",
             "type": "object",
+            "required": [
+                "country",
+                "name",
+                "notes"
+            ],
             "properties": {
                 "complete": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "example": "Ukraine"
                 },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "John Doe"
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "example": "Target usually visits gym at 6 PM"
+                }
+            }
+        },
+        "services.BulkResult": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "successful": {
+                    "type": "integer"
+                }
+            }
+        },
+        "services.DashboardStats": {
+            "type": "object",
+            "properties": {
+                "active_missions": {
+                    "type": "integer"
+                },
+                "average_salary": {
+                    "type": "number"
+                },
+                "completed_missions": {
+                    "type": "integer"
+                },
+                "completed_targets": {
+                    "type": "integer"
+                },
+                "total_cats": {
+                    "type": "integer"
+                },
+                "total_missions": {
+                    "type": "integer"
+                },
+                "total_targets": {
+                    "type": "integer"
+                }
+            }
+        },
+        "services.SalaryUpdate": {
+            "type": "object",
+            "required": [
+                "id",
+                "salary"
+            ],
+            "properties": {
                 "id": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
+                "salary": {
+                    "type": "number",
+                    "minimum": 0
                 }
             }
         },
@@ -1322,9 +1608,14 @@
         },
         "target.UpdateNotesRequest": {
             "type": "object",
+            "required": [
+                "notes"
+            ],
             "properties": {
                 "notes": {
                     "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1,
                     "example": "Target usually visits gym at 6 PM"
                 }
             }

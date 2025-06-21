@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 func TestBreedValidator_IsValid(t *testing.T) {
@@ -16,18 +15,8 @@ func TestBreedValidator_IsValid(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	// Save original URL and restore after test
-	originalURL := breedAPIURL
-	defer func() {
-		breedAPIURL = originalURL
-	}()
-	breedAPIURL = mockServer.URL
-
-	// Create validator
-	validator := &serviceBreed{
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-		ttl:        10 * time.Minute,
-	}
+	// Create validator with custom URL (no race condition!)
+	validator := NewBreedWithURL(mockServer.URL)
 
 	// Test cases
 	tests := []struct {
@@ -68,16 +57,8 @@ func TestBreedValidator_FetchBreeds_Error(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	// Save original URL and restore after test
-	originalURL := breedAPIURL
-	defer func() { breedAPIURL = originalURL }()
-	breedAPIURL = mockServer.URL
-
-	// Create validator
-	validator := &serviceBreed{
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-		ttl:        10 * time.Minute,
-	}
+	// Create validator with custom URL (no race condition!)
+	validator := NewBreedWithURL(mockServer.URL)
 
 	// Test that IsValid returns false when API call fails
 	if validator.IsValid("Bengal") {

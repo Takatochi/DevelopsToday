@@ -1,5 +1,27 @@
 basePath: /v1
 definitions:
+  bulk.BulkCreateCatsRequest:
+    properties:
+      cats:
+        items:
+          $ref: '#/definitions/models.Cat'
+        maxItems: 50
+        minItems: 1
+        type: array
+    required:
+    - cats
+    type: object
+  bulk.BulkSalaryUpdateRequest:
+    properties:
+      updates:
+        items:
+          $ref: '#/definitions/services.SalaryUpdate'
+        maxItems: 100
+        minItems: 1
+        type: array
+    required:
+    - updates
+    type: object
   dto.AuthResponse:
     description: Authentication response with user data and tokens
     properties:
@@ -19,6 +41,26 @@ definitions:
         allOf:
         - $ref: '#/definitions/dto.UserResponse'
         description: User information
+    type: object
+  dto.ErrorResponse:
+    description: Error response structure
+    properties:
+      code:
+        description: |-
+          Error code (optional)
+          @example "VALIDATION_ERROR"
+        example: VALIDATION_ERROR
+        type: string
+      details:
+        description: |-
+          Additional error details (optional)
+          @example {"field": "username", "message": "Username is required"}
+      error:
+        description: |-
+          Error message
+          @example "Invalid request parameters"
+        example: Invalid request parameters
+        type: string
     type: object
   dto.LoginRequest:
     description: User login request
@@ -129,29 +171,50 @@ definitions:
   mission.AssignCatRequest:
     properties:
       cat_id:
+        minimum: 1
         type: integer
+    required:
+    - cat_id
     type: object
   mission.CreateRequest:
     properties:
       targets:
         items:
           $ref: '#/definitions/models.Target'
+        maxItems: 3
+        minItems: 1
         type: array
+    required:
+    - targets
     type: object
   models.Cat:
     description: Cat entity
     properties:
       breed:
+        example: Bengal
+        maxLength: 50
+        minLength: 1
         type: string
       experience:
+        example: 5
+        maximum: 50
+        minimum: 0
         type: integer
       id:
         example: 1
         type: integer
       name:
+        example: Whiskers
+        maxLength: 100
+        minLength: 1
         type: string
       salary:
+        example: 1000.5
+        minimum: 0
         type: number
+    required:
+    - breed
+    - name
     type: object
   models.Mission:
     description: Mission entity with assigned targets and cat
@@ -171,15 +234,69 @@ definitions:
     description: Target entity that needs to be completed
     properties:
       complete:
+        example: false
         type: boolean
       country:
+        example: Ukraine
+        maxLength: 50
+        minLength: 1
         type: string
       id:
+        example: 1
         type: integer
       name:
+        example: John Doe
+        maxLength: 100
+        minLength: 1
         type: string
       notes:
+        example: Target usually visits gym at 6 PM
+        maxLength: 500
+        minLength: 1
         type: string
+    required:
+    - country
+    - name
+    - notes
+    type: object
+  services.BulkResult:
+    properties:
+      errors:
+        items:
+          type: string
+        type: array
+      failed:
+        type: integer
+      successful:
+        type: integer
+    type: object
+  services.DashboardStats:
+    properties:
+      active_missions:
+        type: integer
+      average_salary:
+        type: number
+      completed_missions:
+        type: integer
+      completed_targets:
+        type: integer
+      total_cats:
+        type: integer
+      total_missions:
+        type: integer
+      total_targets:
+        type: integer
+    type: object
+  services.SalaryUpdate:
+    properties:
+      id:
+        type: integer
+      salary:
+        minimum: 0
+        type: number
+    required:
+    - id
+    - salary
     type: object
   services.TokenPair:
     properties:
@@ -192,7 +309,11 @@ definitions:
     properties:
       notes:
         example: Target usually visits gym at 6 PM
+        maxLength: 500
+        minLength: 1
         type: string
+    required:
+    - notes
     type: object
 host: localhost:8080
 info:
@@ -379,6 +500,70 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /bulk/cats:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple cats in parallel using worker pool
+      parameters:
+      - description: Bulk cat creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bulk.BulkCreateCatsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/services.BulkResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Bulk create cats
+      tags:
+      - bulk
+  /bulk/cats/salary:
+    put:
+      consumes:
+      - application/json
+      description: Update multiple cat salaries in parallel using worker pool
+      parameters:
+      - description: Bulk salary update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bulk.BulkSalaryUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.BulkResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Bulk update cat salaries
+      tags:
+      - bulk
   /cats:
     get:
       description: Get list of all cats
@@ -909,6 +1094,28 @@ paths:
       summary: Update target notes
       tags:
       - targets
+  /stats/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive dashboard statistics including cats, missions,
+        and targets data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.DashboardStats'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get dashboard statistics
+      tags:
+      - stats
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

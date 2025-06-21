@@ -1,8 +1,10 @@
 package v1
 
 import (
+	"DevelopsToday/internal/controller/http/v1/bulk"
 	"DevelopsToday/internal/controller/http/v1/cat"
 	"DevelopsToday/internal/controller/http/v1/mission"
+	"DevelopsToday/internal/controller/http/v1/stats"
 	"DevelopsToday/internal/controller/http/v1/target"
 	"DevelopsToday/pkg/logger"
 
@@ -42,4 +44,23 @@ func NewTargetsRoutes(apiV1Group *gin.RouterGroup, service *target.Service, l lo
 	targets.DELETE("/:tid", handler.target.Delete)
 	targets.PUT("/:tid/notes", handler.target.UpdateNotes)
 	targets.PUT("/:tid/complete", handler.target.MarkComplete)
+}
+
+func NewStatsRoutes(apiV1Group *gin.RouterGroup, service *stats.Service, l logger.Interface) {
+	handler := &V1{
+		stats: stats.NewHandler(service, l),
+	}
+
+	statsGroup := apiV1Group.Group("/stats")
+	statsGroup.GET("/dashboard", handler.stats.GetDashboard)
+}
+
+func NewBulkRoutes(apiV1Group *gin.RouterGroup, service *bulk.Service, l logger.Interface) {
+	handler := &V1{
+		bulk: bulk.NewHandler(service, l),
+	}
+
+	bulkGroup := apiV1Group.Group("/bulk")
+	bulkGroup.PUT("/cats/salary", handler.bulk.BulkUpdateSalary)
+	bulkGroup.POST("/cats", handler.bulk.BulkCreateCats)
 }

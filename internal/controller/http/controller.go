@@ -4,8 +4,10 @@ import (
 	"DevelopsToday/config"
 	v1 "DevelopsToday/internal/controller/http/v1"
 	"DevelopsToday/internal/controller/http/v1/auth"
+	"DevelopsToday/internal/controller/http/v1/bulk"
 	"DevelopsToday/internal/controller/http/v1/cat"
 	"DevelopsToday/internal/controller/http/v1/mission"
+	"DevelopsToday/internal/controller/http/v1/stats"
 	"DevelopsToday/internal/controller/http/v1/target"
 	"DevelopsToday/internal/repo"
 	"DevelopsToday/internal/services"
@@ -71,6 +73,16 @@ func NewV1Controller(
 		services.NewTarget(targetRepo, missionRepo),
 	)
 
+	// Stats service
+	statsHandlerService := stats.NewImplService(
+		services.NewStats(catRepo, missionRepo),
+	)
+
+	// Bulk service
+	bulkHandlerService := bulk.NewImplService(
+		services.NewBulk(catRepo),
+	)
+
 	// Auth handler
 	authHandler := auth.NewHandler(store.User(), jwtService, l)
 
@@ -100,6 +112,8 @@ func NewV1Controller(
 			v1.NewSpyCatsRoutes(protectedGroup, catHandlerService, l)
 			v1.NewMissionsRoutes(protectedGroup, missionHandlerService, l)
 			v1.NewTargetsRoutes(protectedGroup, targetHandlerService, l)
+			v1.NewStatsRoutes(protectedGroup, statsHandlerService, l)
+			v1.NewBulkRoutes(protectedGroup, bulkHandlerService, l)
 		}
 	}
 }
