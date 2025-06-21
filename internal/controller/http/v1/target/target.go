@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+
+	mdware "DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/services"
 	"DevelopsToday/pkg/logger"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Service struct {
@@ -22,20 +24,22 @@ func NewImplService(targetContext services.TargetContext) *Service {
 }
 
 type Handler struct {
-	service *Service
-	logger  logger.Interface
+	service   *Service
+	logger    logger.Interface
+	validator *validator.Validate
 }
 
 func NewHandler(service *Service, logger logger.Interface) *Handler {
 	return &Handler{
-		service: service,
-		logger:  logger,
+		service:   service,
+		logger:    logger,
+		validator: validator.New(),
 	}
 }
 
 // UpdateNotesRequest represents request body for updating target notes
 type UpdateNotesRequest struct {
-	Notes string `json:"notes" example:"Target usually visits gym at 6 PM"`
+	Notes string `json:"notes" validate:"required,min=1,max=500" example:"Target usually visits gym at 6 PM"`
 }
 
 // Add godoc
@@ -56,22 +60,29 @@ type UpdateNotesRequest struct {
 func (h *Handler) Add(ctx *gin.Context) {
 	mid, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mission ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	var input models.Target
 	if err := ctx.ShouldBindJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target"})
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
+	// Validate struct fields
+	if err := h.validator.Struct(&input); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	if err := h.service._targetContext.Add(ctx, uint(mid), &input); err != nil {
 		if err.Error() == "cannot add target to completed mission" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			_ = ctx.Error(mdware.ErrMissionComplete)
 		} else {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+			_ = ctx.Error(mdware.ErrMissionNotFound)
 		}
+		h.logger.Error("Failed to add target: %v", err)
 		return
 	}
 
@@ -98,28 +109,37 @@ func (h *Handler) Add(ctx *gin.Context) {
 func (h *Handler) UpdateNotes(ctx *gin.Context) {
 	mid, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mission ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	tid, err := strconv.Atoi(ctx.Param("tid"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	var body UpdateNotesRequest
 	if err = ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notes"})
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
+	// Validate struct fields
+	if err := h.validator.Struct(&body); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	if err = h.service._targetContext.UpdateNotes(ctx, uint(mid), uint(tid), body.Notes); err != nil {
-		if err.Error() == "mission is completed" || err.Error() == "target is completed" {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		if err.Error() == "mission is completed" {
+			_ = ctx.Error(mdware.ErrMissionComplete)
+		} else if err.Error() == "target is completed" {
+			_ = ctx.Error(mdware.ErrTargetComplete)
 		} else {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Target or Mission not found"})
+			_ = ctx.Error(mdware.ErrTargetNotFound)
 		}
+		h.logger.Error("Failed to update target notes: %v", err)
 		return
 	}
 
@@ -142,12 +162,13 @@ func (h *Handler) UpdateNotes(ctx *gin.Context) {
 func (h *Handler) MarkComplete(ctx *gin.Context) {
 	tid, err := strconv.Atoi(ctx.Param("tid"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	if err := h.service._targetContext.MarkComplete(ctx, uint(tid)); err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
+		_ = ctx.Error(mdware.ErrTargetNotFound)
+		h.logger.Error("Failed to mark target complete: %v", err)
 		return
 	}
 
@@ -171,22 +192,23 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 func (h *Handler) Delete(ctx *gin.Context) {
 	mid, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid mission ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	tid, err := strconv.Atoi(ctx.Param("tid"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	if err = h.service._targetContext.DeleteByID(ctx, uint(mid), uint(tid)); err != nil {
 		if err.Error() == "cannot delete completed target" {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			_ = ctx.Error(mdware.ErrTargetComplete)
 		} else {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Target not found"})
+			_ = ctx.Error(mdware.ErrTargetNotFound)
 		}
+		h.logger.Error("Failed to delete target: %v", err)
 		return
 	}
 

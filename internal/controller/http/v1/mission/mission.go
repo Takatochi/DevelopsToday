@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+
+	mdware "DevelopsToday/internal/controller/http/middleware"
 	"DevelopsToday/internal/models"
 	"DevelopsToday/internal/services"
 	"DevelopsToday/pkg/logger"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Service struct {
@@ -22,25 +24,27 @@ func NewImplService(missionContext services.MissionContext) *Service {
 }
 
 type Handler struct {
-	service *Service
-	logger  logger.Interface
+	service   *Service
+	logger    logger.Interface
+	validator *validator.Validate
 }
 
 func NewHandler(service *Service, logger logger.Interface) *Handler {
 	return &Handler{
-		service: service,
-		logger:  logger,
+		service:   service,
+		logger:    logger,
+		validator: validator.New(),
 	}
 }
 
 // CreateRequest represents the request body for creating a mission
 type CreateRequest struct {
-	Targets []models.Target `json:"targets"`
+	Targets []models.Target `json:"targets" validate:"required,min=1,max=3,dive"`
 }
 
 // AssignCatRequest represents the request body for assigning a cat
 type AssignCatRequest struct {
-	CatID uint `json:"cat_id"`
+	CatID uint `json:"cat_id" validate:"required,min=1"`
 }
 
 // Create godoc
@@ -58,8 +62,14 @@ type AssignCatRequest struct {
 //	@Router			/missions [post]
 func (h *Handler) Create(ctx *gin.Context) {
 	var input CreateRequest
-	if err := ctx.ShouldBindJSON(&input); err != nil || len(input.Targets) < 1 || len(input.Targets) > 3 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid targets"})
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
+	// Validate struct fields
+	if err := h.validator.Struct(&input); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
@@ -68,7 +78,8 @@ func (h *Handler) Create(ctx *gin.Context) {
 	}
 
 	if err := h.service._missionContext.Create(ctx, mission); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create mission"})
+		_ = ctx.Error(mdware.ErrInternalError)
+		h.logger.Error("Failed to create mission: %v", err)
 		return
 	}
 
@@ -88,7 +99,8 @@ func (h *Handler) Create(ctx *gin.Context) {
 func (h *Handler) List(ctx *gin.Context) {
 	missions, err := h.service._missionContext.GetAll(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list missions"})
+		_ = ctx.Error(mdware.ErrInternalError)
+		h.logger.Error("Failed to list missions: %v", err)
 		return
 	}
 	ctx.JSON(http.StatusOK, missions)
@@ -107,10 +119,16 @@ func (h *Handler) List(ctx *gin.Context) {
 //	@Failure		404	{object}	map[string]interface{}
 //	@Router			/missions/{id} [get]
 func (h *Handler) GetByID(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
 	mission, err := h.service._missionContext.GetByID(ctx, uint(id))
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+		_ = ctx.Error(mdware.ErrMissionNotFound)
+		h.logger.Error("Failed to get mission by ID: %v", err)
 		return
 	}
 	ctx.JSON(http.StatusOK, mission)
@@ -132,14 +150,27 @@ func (h *Handler) GetByID(ctx *gin.Context) {
 //	@Failure		404		{object}	map[string]interface{}
 //	@Router			/missions/{id}/assign [post]
 func (h *Handler) AssignCat(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
-	var body AssignCatRequest
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
+
+	var body AssignCatRequest
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
+	// Validate struct fields
+	if err := h.validator.Struct(&body); err != nil {
+		_ = ctx.Error(mdware.ErrBadRequest)
+		return
+	}
+
 	if err := h.service._missionContext.AssignCat(ctx, uint(id), body.CatID); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assign cat"})
+		_ = ctx.Error(mdware.ErrInternalError)
+		h.logger.Error("Failed to assign cat: %v", err)
 		return
 	}
 	ctx.Status(http.StatusOK)
@@ -161,14 +192,15 @@ func (h *Handler) AssignCat(ctx *gin.Context) {
 func (h *Handler) MarkComplete(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	// Викликаємо сервісний метод
 	err = h.service._missionContext.MarkComplete(ctx, uint(id))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		_ = ctx.Error(mdware.ErrBadRequest)
+		h.logger.Error("Failed to mark mission complete: %v", err)
 		return
 	}
 
@@ -191,17 +223,18 @@ func (h *Handler) MarkComplete(ctx *gin.Context) {
 func (h *Handler) Delete(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		_ = ctx.Error(mdware.ErrBadRequest)
 		return
 	}
 
 	err = h.service._missionContext.DeleteByID(ctx, uint(id))
 	if err != nil {
 		if err.Error() == "cannot delete assigned mission" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			_ = ctx.Error(mdware.ErrBadRequest)
 		} else {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Mission not found"})
+			_ = ctx.Error(mdware.ErrMissionNotFound)
 		}
+		h.logger.Error("Failed to delete mission: %v", err)
 		return
 	}
 
