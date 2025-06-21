@@ -13,17 +13,56 @@ REST API for managing spy cats, missions, and targets with JWT authentication.
 ### Docker Registry (Fastest - No Build Required)
 
 **Pull pre-built image from GitHub Container Registry:**
-```bash
-# Option 1: Just the API (requires external DB)
-docker pull ghcr.io/takatochi/developstodayrepo:latest
-docker run -p 8080:8080 \
-  -e PG_URL="postgres://user:pass@host:5432/dbname" \
-  ghcr.io/takatochi/developstodayrepo:latest
 
-# Option 2: Full stack with production Docker Compose
-curl -O https://raw.githubusercontent.com/Takatochi/DevelopsToday/main/docker-compose.prod.yml
-GITHUB_REPOSITORY=takatochi/developstodayrepo docker-compose -f docker-compose.prod.yml up -d
+#### Option 1: Standalone API Container
+```bash
+# Pull the latest image
+docker pull ghcr.io/takatochi/developstoday:latest
+
+# Run with external database (requires PostgreSQL running locally)
+docker run -p 8080:8080 \
+  -e PG_URL="postgres://postgres:password@host.docker.internal:5432/postgres" \
+  -e JWT_SECRET="your-super-secret-jwt-key-at-least-32-characters-long" \
+  -e CACHE_TYPE="memory" \
+  -e APP_NAME="spy-cats-api" \
+  -e APP_VERSION="1.0.0" \
+  -e HTTP_PORT="8080" \
+  -e LOG_LEVEL="info" \
+  -e SWAGGER_ENABLED="true" \
+  -e JWT_ACCESS_TOKEN_TTL="900" \
+  -e JWT_REFRESH_TOKEN_TTL="604800" \
+  -e JWT_SIGNING_ALGORITHM="HS256" \
+  ghcr.io/takatochi/developstoday:self-code-review-28f8b16
+
+# Alternative: Use with cloud database
+docker run -p 8080:8080 \
+  -e PG_URL="postgres://username:password@your-db-host:5432/dbname" \
+  -e JWT_SECRET="your-super-secret-jwt-key-at-least-32-characters-long" \
+  -e CACHE_TYPE="memory" \
+  ghcr.io/takatochi/developstoday:self-code-review-28f8b16
 ```
+
+#### Option 2: Full Stack with Docker Compose (Recommended)
+```bash
+# Download production compose file
+curl -O https://raw.githubusercontent.com/Takatochi/DevelopsToday/self-code-review/docker-compose.prod.yml
+
+# Start full stack (API + PostgreSQL + Redis + Nginx)
+GITHUB_REPOSITORY=takatochi/developstoday docker-compose -f docker-compose.prod.yml up -d
+
+# Check status
+docker-compose -f docker-compose.prod.yml ps
+
+# Test API
+curl http://localhost/health
+curl http://localhost/swagger/
+```
+
+#### Available Image Tags:
+- `self-code-review-28f8b16` - Latest with all new features (recommended)
+- `self-code-review-aaef981` - Previous version
+- `latest` - Latest stable from main branch
+- `main-<hash>` - Specific commits from main branch
 
 **Access**: http://localhost:8080/swagger/index.html
 
@@ -115,6 +154,55 @@ docker-compose up -d --build
 - **API (HTTP)**: http://localhost:8080/v1
 - **Swagger Docs**: https://localhost/swagger/index.html
 - **Health Check**: https://localhost/health
+
+## Environment Variables
+
+### Required Variables
+| Variable | Description | Example | Default |
+|----------|-------------|---------|---------|
+| `PG_URL` | PostgreSQL connection string | `postgres://user:pass@host:5432/db` | - |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | `your-super-secret-jwt-key-at-least-32-characters-long` | - |
+
+### Optional Variables
+| Variable | Description | Example | Default |
+|----------|-------------|---------|---------|
+| `APP_NAME` | Application name | `spy-cats-api` | `spy-cats-api` |
+| `APP_VERSION` | Application version | `1.0.0` | `1.0.0` |
+| `HTTP_PORT` | HTTP server port | `8080` | `8080` |
+| `LOG_LEVEL` | Logging level | `info`, `debug`, `warn`, `error` | `info` |
+| `SWAGGER_ENABLED` | Enable Swagger UI | `true`, `false` | `true` |
+| `JWT_ACCESS_TOKEN_TTL` | Access token TTL (seconds) | `900` | `900` |
+| `JWT_REFRESH_TOKEN_TTL` | Refresh token TTL (seconds) | `604800` | `604800` |
+| `JWT_SIGNING_ALGORITHM` | JWT signing algorithm | `HS256` | `HS256` |
+| `CACHE_TYPE` | Cache implementation | `redis`, `memory` | `redis` |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379` | `redis://localhost:6379` |
+| `REDIS_PASSWORD` | Redis password | `mypassword` | `` (empty) |
+| `REDIS_DB` | Redis database number | `0` | `0` |
+
+### Docker Environment Examples
+
+#### Minimal Configuration (Memory Cache)
+```bash
+docker run -p 8080:8080 \
+  -e PG_URL="postgres://postgres:password@host.docker.internal:5432/postgres" \
+  -e JWT_SECRET="your-super-secret-jwt-key-at-least-32-characters-long" \
+  -e CACHE_TYPE="memory" \
+  ghcr.io/takatochi/developstoday:self-code-review-28f8b16
+```
+
+#### Full Configuration (Redis Cache)
+```bash
+docker run -p 8080:8080 \
+  -e PG_URL="postgres://postgres:password@host.docker.internal:5432/postgres" \
+  -e JWT_SECRET="your-super-secret-jwt-key-at-least-32-characters-long" \
+  -e CACHE_TYPE="redis" \
+  -e REDIS_URL="redis://redis-host:6379" \
+  -e REDIS_PASSWORD="redis-password" \
+  -e APP_NAME="spy-cats-api" \
+  -e LOG_LEVEL="debug" \
+  -e SWAGGER_ENABLED="true" \
+  ghcr.io/takatochi/developstoday:self-code-review-28f8b16
+```
 
 ## Test Credentials
 ```
